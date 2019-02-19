@@ -1,0 +1,16 @@
+*.zip
+*.jpg
+*.png
+*.mat
+*log.*
+*.html
+*.pyc
+*.jpeg
+*.pth
+*checkpoint*
+*data/*
+*.xml
+*.pkl
+*log/*
+*opts.json
+*.yaml
