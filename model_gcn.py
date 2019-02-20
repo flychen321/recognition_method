@@ -85,8 +85,6 @@ def sparse_mx_to_torch_sparse_tensor(sparse_mx):
     return torch.sparse.FloatTensor(indices, values, shape)
 
 
-
-
 class GraphConvolution(Module):
     """
     Simple GCN layer, similar to https://arxiv.org/abs/1609.02907
@@ -128,13 +126,25 @@ class GCN(nn.Module):
         super(GCN, self).__init__()
 
         self.gc1 = GraphConvolution(nfeat, nhid)
-        self.gc2 = GraphConvolution(nhid, nclass)
+        self.gc2 = GraphConvolution(nhid, nhid)
+        self.gc3 = GraphConvolution(nhid, nhid)
+        self.gc4 = GraphConvolution(nhid, nhid)
+        self.gc5 = GraphConvolution(nhid, nhid)
+        self.gc6 = GraphConvolution(nhid, nclass)
         self.dropout = dropout
 
     def forward(self, x, adj):
-        x = F.relu(self.gc1(x, adj))
+        x = F.relu6(self.gc1(x, adj))
         x = F.dropout(x, self.dropout, training=self.training)
-        x = self.gc2(x, adj)
+        x = F.relu6(self.gc2(x, adj))
+        x = F.dropout(x, self.dropout, training=self.training)
+        # x = F.relu6(self.gc3(x, adj))
+        # x = F.dropout(x, self.dropout, training=self.training)
+        # x = F.relu6(self.gc4(x, adj))
+        # x = F.dropout(x, self.dropout, training=self.training)
+        # x = F.relu6(self.gc5(x, adj))
+        # x = F.dropout(x, self.dropout, training=self.training)
+        x = self.gc6(x, adj)
         return F.log_softmax(x, dim=1)
 
 
@@ -155,7 +165,7 @@ class Sggnn_prepare(nn.Module):
         num_p_per_batch = len(x_p)  # 48
         num_g_per_batch = len(x_g)  # 48
 
-        pair_num = 16
+        pair_num = np.random.randint(int(num_p_per_batch * 0.4), int(num_p_per_batch * 0.6))
         not_pair_num = num_g_per_batch - pair_num
         index = np.arange(num_p_per_batch)
         np.random.shuffle(index[pair_num:])
@@ -164,6 +174,7 @@ class Sggnn_prepare(nn.Module):
             y_g = y_g[index]
 
         index = np.random.permutation(num_p_per_batch)
+        # index = np.arange(num_p_per_batch)
         x_p = x_p[index]
         x_g = x_g[index]
         if y is not None:
@@ -180,12 +191,23 @@ class Sggnn_prepare(nn.Module):
             adj = adj.cuda()
 
         feature = self.basemodel(x_p, x_g)[-2]
+        feature = self.normalize(feature.cpu().numpy())
+        feature = torch.from_numpy(feature).cuda().float()
         if y is not None:
             label = torch.where(y_p == y_g, torch.full_like(label, 1), torch.full_like(label, 0))
         for i in range(num_p_per_batch):
             adj[i, :] = (feature[i].unsqueeze(0).repeat(num_p_per_batch, 1) - feature).pow(2).sum(-1)
-        adj = (-adj).exp()
-        adj = self.preprocess_adj(adj)
+        # adj = (-adj).exp()
+        # adj = self.preprocess_adj(adj)
+        # #or
+        # build symmetric adjacency matrix
+        adj_np = adj.cpu().numpy()
+        adj_np = adj_np + np.multiply(adj_np.T, adj_np.T > adj_np) - np.multiply(adj_np, adj_np.T > adj_np)
+        adj_np = self.normalize(adj_np + sp.eye(adj_np.shape[0]))
+        adj = torch.from_numpy(adj_np).cuda().float()
+
+        # adj = torch.FloatTensor(num_p_per_batch, num_g_per_batch).fill_(
+        #     1.0 / (num_p_per_batch * num_g_per_batch)).cuda()
 
         return adj, feature, label
 
@@ -197,5 +219,70 @@ class Sggnn_prepare(nn.Module):
         d_inv_sqrt[torch.isinf(d_inv_sqrt)] = 0.
         d_mat_inv_sqrt = torch.diag(d_inv_sqrt)
         return adj.mm(d_mat_inv_sqrt).transpose(0, 1).mm(d_mat_inv_sqrt)
+
+    def normalize(self, mx):
+        """Row-normalize sparse matrix"""
+        rowsum = np.array(mx.sum(1))
+        r_inv = np.power(rowsum, -1).flatten()
+        r_inv[np.isinf(r_inv)] = 0.
+        r_mat_inv = sp.diags(r_inv)
+        mx = r_mat_inv.dot(mx)
+        return mx
+
+
+class Sggnn_prepare_test(nn.Module):
+    def __init__(self):
+        super(Sggnn_prepare_test, self).__init__()
+
+    def forward(self, qf, gf):
+        use_gpu = torch.cuda.is_available()
+
+        num_p_per_batch = len(gf)  # 128
+        num_g_per_batch = len(gf)  # 128
+
+        len_feature = 512
+        feature = torch.FloatTensor(num_p_per_batch, len_feature).zero_()
+        adj = torch.FloatTensor(num_p_per_batch, num_g_per_batch).zero_()
+        if use_gpu:
+            feature = feature.cuda()
+            adj = adj.cuda()
+
+        feature = (qf - gf).pow(2)
+        feature = self.normalize(feature.cpu().numpy())
+        feature = torch.from_numpy(feature).cuda().float()
+        for i in range(num_p_per_batch):
+            adj[i, :] = (feature[i].unsqueeze(0).repeat(num_p_per_batch, 1) - feature).pow(2).sum(-1)
+        # adj = (-adj).exp()
+        # adj = self.preprocess_adj(adj)
+        # #or
+        # build symmetric adjacency matrix
+        adj_np = adj.cpu().numpy()
+        adj_np = adj_np + np.multiply(adj_np.T, adj_np.T > adj_np) - np.multiply(adj_np, adj_np.T > adj_np)
+        adj_np = self.normalize(adj_np + sp.eye(adj_np.shape[0]))
+        adj = torch.from_numpy(adj_np).cuda().float()
+
+        return adj, feature
+
+    def preprocess_adj(self, adj):
+        """Symmetrically normalize adjacency matrix."""
+        adj = adj + torch.eye(adj.shape[0]).cuda()
+        rowsum = torch.Tensor(adj.sum(1).cpu()).cuda()
+        d_inv_sqrt = torch.pow(rowsum, -0.5).flatten()
+        d_inv_sqrt[torch.isinf(d_inv_sqrt)] = 0.
+        d_mat_inv_sqrt = torch.diag(d_inv_sqrt)
+        return adj.mm(d_mat_inv_sqrt).transpose(0, 1).mm(d_mat_inv_sqrt)
+
+    def normalize(self, mx):
+        """Row-normalize sparse matrix"""
+        rowsum = np.array(mx.sum(1))
+        r_inv = np.power(rowsum, -1).flatten()
+        r_inv[np.isinf(r_inv)] = 0.
+        r_mat_inv = sp.diags(r_inv)
+        mx = r_mat_inv.dot(mx)
+        return mx
+
+
+
+
 
 

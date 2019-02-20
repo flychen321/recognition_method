@@ -15,7 +15,13 @@ import torch.nn.functional as F
 # print(F.softmax(a, 0))
 # print(F.softmax(a, 0)[:,0].sum())
 
-index = np.arange(48)
-np.random.shuffle(index[16:])
-print(index)
-print(np.random.permutation(10))
+# index = np.arange(48)
+# np.random.shuffle(index[16:])
+# print(index)
+# print(np.random.permutation(10))
+
+num_p_per_batch = 128
+adj = torch.FloatTensor(num_p_per_batch, num_p_per_batch).cuda().fill_(
+            1.0 / (num_p_per_batch * num_p_per_batch))
+
+print(np.random.randint(num_p_per_batch*0.2, num_p_per_batch*0.6))

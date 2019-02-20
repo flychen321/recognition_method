@@ -5,6 +5,7 @@ from __future__ import print_function, division
 import argparse
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 from torch.optim import lr_scheduler
 from torch.autograd import Variable
@@ -457,40 +458,40 @@ def train_gcn(train_loader, model_siamese, model_gcn, loss_gcn_fn, optimizer_gcn
                 data = tuple(d.cuda() for d in data)
                 if target is not None:
                     target = target.cuda()
-                    target1 = target
-            for j in range(100000):
-                optimizer_gcn.zero_grad()
 
-                with torch.no_grad():
-                    adj, feature, target = model_siamese(*data, target1)
+            with torch.no_grad():
+                adj, feature, target1 = model_siamese(*data, target)
+            # for batch_idx in range(100000):
+            optimizer_gcn.zero_grad()
+            target = target1
+            outputs = model_gcn(feature, adj)  # for SGGNN_GCN
+            outputs_org = outputs
+            _, preds = torch.max(outputs.data, 1)
+            running_corrects = float(torch.sum(preds == target.data))
+            epoch_id_acc = running_corrects / len(preds)
 
+            if type(outputs) not in (tuple, list):
+                outputs = (outputs,)
 
-                outputs = model_gcn(feature, adj)  # for SGGNN_GCN
-                _, preds = torch.max(outputs.data, 1)
-                running_corrects = float(torch.sum(preds == target.data))
-                epoch_id_acc = running_corrects / len(preds)
+            loss_inputs = outputs
+            if target is not None:
+                target = (target,)
+                loss_inputs += target
 
-                if type(outputs) not in (tuple, list):
-                    outputs = (outputs,)
+            loss_inputs = tuple(d.cuda() for d in loss_inputs)
 
-                loss_inputs = outputs
-                if target is not None:
-                    target = (target,)
-                    loss_inputs += target
-
-                loss_inputs = tuple(d.cuda() for d in loss_inputs)
-
-                loss_outputs = loss_gcn_fn(*loss_inputs)
-                loss = loss_outputs[0] if type(loss_outputs) in (tuple, list) else loss_outputs
-                losses.append(loss.item())
-                total_loss += loss.item()
-                loss.backward()
-                optimizer_gcn.step()
-                if j % 10 == 0:
-                    print('epoch = %2d  batch_idx = %4d  loss = %.5f' % (epoch, batch_idx, loss))
-                    print('j = %d   acc = %.5f' % (j, epoch_id_acc))
-            # if batch_idx > 0:
-            #     break
+            loss_outputs = loss_gcn_fn(*loss_inputs)
+            loss = loss_outputs[0] if type(loss_outputs) in (tuple, list) else loss_outputs
+            losses.append(loss.item())
+            total_loss += loss.item()
+            loss.backward()
+            optimizer_gcn.step()
+            if batch_idx % 50 == 0:
+                print('epoch = %2d  batch_idx = %4d  loss = %.5f' % (epoch, batch_idx, loss))
+                print('acc = %.5f' % (epoch_id_acc))
+                print('preds  = %s' % preds[:20])
+                print('target = %s' % target[0][:20])
+                print('outputs_org = %s' % outputs_org[:10, :])
         save_network(model_gcn, name, 'gcn' + str(epoch))
         save_whole_network(model_gcn, name, 'whole_gcn' + str(epoch))
     time_elapsed = time.time() - since
@@ -618,15 +619,17 @@ if stage_3:
                     nclass=2,
                     dropout=0.5)
     optimizer_gcn = optim.Adam(model_gcn.parameters(),
-                           lr=0.0001, weight_decay=5e-4)
+                           lr=0.001, weight_decay=5e-4)
 
     if use_gpu:
         model_siamese.cuda()
         model_gcn.cuda()
     loss_gcn_fn = nn.CrossEntropyLoss()
-    lr = 1e-3
+    # loss_gcn_fn = nn.MSELoss()
+    # loss_gcn_fn = F.nll_loss
+    # lr = 1e-3
     # optimizer_gcn = optim.Adam(model_gcn.parameters(), lr=lr)
-    scheduler_gcn = lr_scheduler.StepLR(optimizer_gcn, 40, gamma=0.1, last_epoch=-1)
+    scheduler_gcn = lr_scheduler.StepLR(optimizer_gcn, 20, gamma=0.3, last_epoch=-1)
     n_epochs = 100
     model = train_gcn(dataloaders_gcn['train'], model_siamese, model_gcn, loss_gcn_fn, optimizer_gcn, scheduler_gcn,
                       num_epochs=n_epochs)
