@@ -25,7 +25,7 @@ import os
 from model_siamese import ft_net, ft_net_dense, PCB, verif_net
 from model_siamese import Sggnn_siamese, Sggnn_gcn, SiameseNet, Sggnn_all
 from random_erasing import RandomErasing
-from datasets import TripletFolder, SiameseDataset, SggDataset, GcnDataset
+from datasets import TripletFolder, SiameseDataset, GcnDataset
 import yaml
 from shutil import copyfile
 from losses import ContrastiveLoss, SigmoidLoss
@@ -43,7 +43,7 @@ parser.add_argument('--name', default='ft_ResNet50', type=str, help='output mode
 parser.add_argument('--data_dir', default='data/market/pytorch', type=str, help='training dir path')
 parser.add_argument('--train_all', action='store_true', help='use all training data')
 parser.add_argument('--color_jitter', action='store_true', help='use color jitter in training')
-parser.add_argument('--batchsize', default=128, type=int, help='batchsize')
+parser.add_argument('--batchsize', default=48, type=int, help='batchsize')
 parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
 parser.add_argument('--alpha', default=1.0, type=float, help='alpha')
 parser.add_argument('--erasing_p', default=0, type=float, help='Random Erasing probability, in [0,1]')
@@ -133,12 +133,12 @@ image_datasets['val'] = dataset(os.path.join(data_dir, 'val'),
 
 dataloaders_sgg = {}
 dataloaders_sgg['train'] = torch.utils.data.DataLoader(
-    SggDataset(os.path.join(data_dir, 'train_all'), data_transforms['train']), batch_size=opt.batchsize, shuffle=True,
+    GcnDataset(os.path.join(data_dir, 'train_all'), data_transforms['train'], img_num=4), batch_size=opt.batchsize, shuffle=True,
     num_workers=8)
 
 dataloaders_gcn = {}
 dataloaders_gcn['train'] = torch.utils.data.DataLoader(
-    GcnDataset(os.path.join(data_dir, 'train_all'), data_transforms['train']), batch_size=opt.batchsize, shuffle=True,
+    GcnDataset(os.path.join(data_dir, 'train_all'), data_transforms['train'], img_num=2), batch_size=opt.batchsize, shuffle=True,
     num_workers=8)
 
 batch = {}

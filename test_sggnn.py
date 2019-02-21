@@ -34,7 +34,7 @@ parser.add_argument('--gpu_ids', default='0', type=str, help='gpu_ids: e.g. 0  0
 parser.add_argument('--which_epoch', default='best', type=str, help='0,1,2,3...or last')
 parser.add_argument('--test_dir', default='data/market/pytorch', type=str, help='./test_data')
 parser.add_argument('--name', default='sggnn', type=str, help='save model path')
-parser.add_argument('--batchsize', default=512, type=int, help='batchsize')
+parser.add_argument('--batchsize', default=48, type=int, help='batchsize')
 parser.add_argument('--use_dense', action='store_true', help='use densenet121')
 parser.add_argument('--PCB', action='store_true', help='use PCB')
 parser.add_argument('--fp16', action='store_true', help='use fp16.')
@@ -51,7 +51,7 @@ print('opt.PCB = %s' % opt.PCB)
 print('opt.fp16 = %s' % opt.fp16)
 ###load config###
 # load the training config
-config_path = os.path.join('./model', opt.name, 'opts.yaml')
+config_path = os.path.join('./model', 'sggnn', 'opts.yaml')
 with open(config_path, 'r') as stream:
     config = yaml.load(stream)
 opt.fp16 = False  # config['fp16']
@@ -183,6 +183,7 @@ query_cam, query_label = get_id(query_path)
 # Load Collected data Trained model
 print('-------test-----------')
 embedding_net = ft_net_dense(751)
+# embedding_net = ft_net_dense(702)
 model_siamese = SiameseNet(embedding_net)
 model_siamese = load_network_easy(model_siamese, name)
 model_siamese = model_siamese.eval()

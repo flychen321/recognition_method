@@ -349,14 +349,6 @@ class PCB_test(nn.Module):
         return y
 
 
-# debug model structure
-# net = ft_net(751)
-# net = ft_net(751)
-# print(net)
-# input = Variable(torch.FloatTensor(8, 3, 224, 224))
-# output,f = net(input)
-# print('net output size:')
-# print(f.shape)
 
 class SiameseNet(nn.Module):
     def __init__(self, embedding_net):
@@ -372,8 +364,8 @@ class SiameseNet(nn.Module):
         output2, feature2 = self.embedding_net(x2)
         feature = (feature1 - feature2).pow(2)
 
-        f_norm = feature.norm(p=2, dim=1, keepdim=True) + 1e-8
-        feature = feature.div(f_norm)
+        # f_norm = feature.norm(p=2, dim=1, keepdim=True) + 1e-8
+        # feature = feature.div(f_norm)
 
         # feature = self.bn(feature)
 

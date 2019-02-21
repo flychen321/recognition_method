@@ -104,65 +104,6 @@ class SiameseDataset(datasets.ImageFolder):
         return len(self.imgs)
 
 
-class SggDataset(datasets.ImageFolder):
-    """
-    Train: For each sample creates randomly 4 images
-    Test: Creates fixed pairs for testing
-    """
-
-    def __init__(self, root, transform):
-        super(SggDataset, self).__init__(root, transform)
-        self.labels = np.array(self.imgs)[:, 1].astype(int)
-        self.data = np.array(self.imgs)[:, 0]
-        self.labels_set = set(self.labels)
-        self.label_to_indices = {label: np.where(self.labels == label)[0]
-                                 for label in self.labels_set}
-        cams = []
-        for s in self.imgs:
-            cams.append(self._get_cam_id(s[0]))
-        self.cams = np.asarray(cams)
-
-    def _get_cam_id(self, path):
-        filename = os.path.basename(path)
-        camera_id = filename.split('c')[1][0]
-        return int(camera_id) - 1
-
-    def __getitem__(self, index):
-        img_num = 4
-        label = self.labels[index].item()
-        img, label = self.__getimgs_bylabel__(label, img_num)
-        return img, label
-
-    def __len__(self):
-        return len(self.imgs)
-
-    def __getimgs_bylabel__(self, label, img_num):
-        if len(self.label_to_indices[label]) >= img_num:
-            index = np.random.choice(self.label_to_indices[label], size=img_num, replace=False)
-        else:
-            index1 = np.random.choice(self.label_to_indices[label], size=len(self.label_to_indices[label]), replace=False)
-            index2 = np.random.choice(self.label_to_indices[label], size=img_num - len(self.label_to_indices[label]),
-                                      replace=True)
-            index = np.concatenate((index1, index2))
-        for i in range(img_num):
-            img_temp = (self.data[index[i]])
-            label_temp = (self.labels[index[i]])
-            if type(label_temp) not in (tuple, list):
-                label_temp = (label_temp,)
-            label_temp = torch.LongTensor(label_temp)
-            img_temp = default_loader(img_temp)
-            if self.transform is not None:
-                img_temp = self.transform(img_temp)
-                img_temp = img_temp.unsqueeze(0)
-            if i == 0:
-                img = img_temp
-                label = label_temp
-            else:
-                img = torch.cat((img, img_temp), 0)
-                label = torch.cat((label, label_temp), 0)
-
-        return img, label
-
 
 class GcnDataset(datasets.ImageFolder):
     """
@@ -170,7 +111,7 @@ class GcnDataset(datasets.ImageFolder):
     Test: Creates fixed pairs for testing
     """
 
-    def __init__(self, root, transform):
+    def __init__(self, root, transform, img_num=4):
         super(GcnDataset, self).__init__(root, transform)
         self.labels = np.array(self.imgs)[:, 1].astype(int)
         self.data = np.array(self.imgs)[:, 0]
@@ -181,6 +122,7 @@ class GcnDataset(datasets.ImageFolder):
         for s in self.imgs:
             cams.append(self._get_cam_id(s[0]))
         self.cams = np.asarray(cams)
+        self.img_num = img_num
 
     def _get_cam_id(self, path):
         filename = os.path.basename(path)
@@ -188,7 +130,7 @@ class GcnDataset(datasets.ImageFolder):
         return int(camera_id) - 1
 
     def __getitem__(self, index):
-        img_num = 2
+        img_num = self.img_num
         label = self.labels[index].item()
         img, label = self.__getimgs_bylabel__(label, img_num)
         return img, label
