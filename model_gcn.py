@@ -282,6 +282,59 @@ class Sggnn_prepare_test(nn.Module):
         return mx
 
 
+class Random_walk(nn.Module):
+    def __init__(self, model):
+        super(Random_walk, self).__init__()
+        self.classifier = model.classifier.classifier
+    def forward(self, qf, gf):
+        use_gpu = torch.cuda.is_available()
+        batch_size = len(qf)
+        num_g_per_id = len(gf[0])  # 100
+        d = (qf.unsqueeze(1) - gf).pow(2)
+        d_new = torch.FloatTensor(d.shape).zero_()
+        w = torch.FloatTensor(batch_size, num_g_per_id, num_g_per_id).zero_()
+        if use_gpu:
+            d = d.cuda()
+            d_new = d_new.cuda()
+            w = w.cuda()
+        for i in range(num_g_per_id):
+            for j in range(num_g_per_id):
+                w[:, i, j] = (gf[:, i] - gf[:, j]).pow(2).sum(-1)
+                w[:, i, j] = (-w[:, i, j]).exp()
+                # w[i, :] = w[i, :] * (-3.0)
+                # #or
+                # w[:, i, j] = F.softmax(self.classifier.classifier((gf[:, i] - gf[:, j]).pow(2)), -1)[:, -1]
+        ratio = 0.95
+        for i in range(batch_size):
+            # w[i] = self.preprocess_adj(w[i])
+            w[i] = self.preprocess_sggnn_adj(w[i])
+            for j in range(d.shape[-1]):
+                #or without d -> t
+                d_new[i, :, j] = torch.mm(d[i, :, j].unsqueeze(0), w[i])
+                d_new[i, :, j] = ratio * d_new[i, :, j] + (1 - ratio) * d[i, :, j]
+        # 1 for similar & 0 for different
+        # d_new is different from (pf - gf).pow(2)
+        result = d_new.pow(2).sum(-1)
+        result = (-result).exp()
+        # #or
+        # result = F.softmax(self.classifier(d_new), -1)[:, :, -1]
+        _, index = torch.sort(result, -1, descending=True)
+        return index
+
+    def preprocess_adj(self, adj):
+        """Symmetrically normalize adjacency matrix."""
+        adj = adj + torch.eye(adj.shape[0]).cuda()
+        rowsum = torch.Tensor(adj.sum(1).cpu()).cuda()
+        d_inv_sqrt = torch.pow(rowsum, -0.5).flatten()
+        d_inv_sqrt[torch.isinf(d_inv_sqrt)] = 0.
+        d_mat_inv_sqrt = torch.diag(d_inv_sqrt)
+        return adj.mm(d_mat_inv_sqrt).transpose(0, 1).mm(d_mat_inv_sqrt)
+
+    def preprocess_sggnn_adj(self, adj):
+        """normalize adjacency matrix."""
+        adj = F.softmax((adj - 100 * adj.diag().diag()), 0)
+        return adj
+
 
 
 
