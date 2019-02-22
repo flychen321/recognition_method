@@ -16,6 +16,7 @@ import yaml
 from model_siamese import ft_net, ft_net_dense, PCB, PCB_test
 from model_siamese import Sggnn_siamese, Sggnn_gcn, SiameseNet
 from model_siamese import load_network_easy, load_network, save_network, save_whole_network
+
 # fp16
 try:
     from apex.fp16_utils import *
@@ -93,11 +94,11 @@ if opt.PCB:
     ])
 
 data_dir = test_dir
-
-image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x), data_transforms) for x in ['gallery', 'query']}
+dataset_list = ['gallery', 'query', 'train_all']
+image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x), data_transforms) for x in dataset_list}
 dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=opt.batchsize,
-                                              shuffle=False, num_workers=16) for x in ['gallery', 'query']}
-class_names = image_datasets['query'].classes
+                                              shuffle=False, num_workers=16) for x in dataset_list}
+class_names = image_datasets[dataset_list[1]].classes
 use_gpu = torch.cuda.is_available()
 
 
@@ -169,12 +170,16 @@ def get_id(img_path):
     return camera_id, labels
 
 
-gallery_path = image_datasets['gallery'].imgs
-query_path = image_datasets['query'].imgs
+dataset_path = []
+for i in range(len(dataset_list)):
+    dataset_path.append(image_datasets[dataset_list[i]].imgs)
 
-gallery_cam, gallery_label = get_id(gallery_path)
-query_cam, query_label = get_id(query_path)
-
+dataset_cam = []
+dataset_label = []
+for i in range(len(dataset_list)):
+    cam, label = get_id(dataset_path[i])
+    dataset_cam.append(cam)
+    dataset_label.append(label)
 
 ######################################################################
 # Load Collected data Trained model
@@ -188,12 +193,15 @@ if use_gpu:
     model = model_siamese.cuda()
 
 # Extract feature
+dataset_feature = []
 with torch.no_grad():
-    gallery_feature = extract_feature(model, dataloaders['gallery'])
-    query_feature = extract_feature(model, dataloaders['query'])
+    for i in range(len(dataset_list)):
+        dataset_feature.append(extract_feature(model, dataloaders[dataset_list[i]]))
 
+result = {'gallery_f': dataset_feature[0].numpy(), 'gallery_label': dataset_label[0], 'gallery_cam': dataset_cam[0],
+          'query_f': dataset_feature[1].numpy(), 'query_label': dataset_label[1], 'query_cam': dataset_cam[1]}
+scipy.io.savemat('pytorch_result_test.mat', result)
 
-result = {'gallery_f': gallery_feature.numpy(), 'gallery_label': gallery_label, 'gallery_cam': gallery_cam,
-          'query_f': query_feature.numpy(), 'query_label': query_label, 'query_cam': query_cam}
-scipy.io.savemat('pytorch_result.mat', result)
-
+if len(dataset_list) == 3:
+    result = {'train_f': dataset_feature[2].numpy(), 'train_label': dataset_label[2], 'train_cam': dataset_cam[2]}
+    scipy.io.savemat('pytorch_result_train.mat', result)
