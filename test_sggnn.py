@@ -5,9 +5,6 @@ from __future__ import print_function, division
 import argparse
 import torch
 import torch.nn as nn
-import torch.optim as optim
-from torch.optim import lr_scheduler
-from torch.autograd import Variable
 import torch.backends.cudnn as cudnn
 import numpy as np
 import torchvision
@@ -134,7 +131,7 @@ def extract_feature(model, dataloaders):
         for i in range(2):
             if (i == 1):
                 img = fliplr(img)
-            input_img = Variable(img.cuda())
+            input_img = img.cuda()
             if opt.fp16:
                 input_img = input_img.half()
             _, outputs = model(input_img)
@@ -151,7 +148,7 @@ def extract_feature(model, dataloaders):
             fnorm = torch.norm(ff, p=2, dim=1, keepdim=True)
             ff = ff.div(fnorm.expand_as(ff))
 
-        ff = ff.data.cpu().float()
+        ff = ff.detach().cpu().float()
         features = torch.cat((features, ff), 0)
     return features
 

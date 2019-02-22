@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 from torch.nn import init
 from torchvision import models
-from torch.autograd import Variable
 import os
 import numpy as np
 import math
@@ -71,20 +70,20 @@ def weights_init_kaiming(m):
     classname = m.__class__.__name__
     # print(classname)
     if classname.find('Conv') != -1:
-        init.kaiming_normal_(m.weight.data, a=0, mode='fan_in')
+        init.kaiming_normal_(m.weight.detach(), a=0, mode='fan_in')
     elif classname.find('Linear') != -1:
-        init.kaiming_normal_(m.weight.data, a=0, mode='fan_out')
-        init.constant_(m.bias.data, 0.0)
+        init.kaiming_normal_(m.weight.detach(), a=0, mode='fan_out')
+        init.constant_(m.bias.detach(), 0.0)
     elif classname.find('BatchNorm1d') != -1:
-        init.normal_(m.weight.data, 1.0, 0.02)
-        init.constant_(m.bias.data, 0.0)
+        init.normal_(m.weight.detach(), 1.0, 0.02)
+        init.constant_(m.bias.detach(), 0.0)
 
 
 def weights_init_classifier(m):
     classname = m.__class__.__name__
     if classname.find('Linear') != -1:
-        init.normal_(m.weight.data, std=0.001)
-        init.constant_(m.bias.data, 0.0)
+        init.normal_(m.weight.detach(), std=0.001)
+        init.constant_(m.bias.detach(), 0.0)
 
 
 # Defines the new fc layer and classification layer

@@ -8,7 +8,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.optim import lr_scheduler
-from torch.autograd import Variable
 import numpy as np
 import torchvision
 from torchvision import datasets, models, transforms
@@ -213,12 +212,11 @@ def train_model_triplet(model, model_verif, criterion, optimizer, scheduler, num
                     continue
 
                 if use_gpu:
-                    inputs = Variable(inputs.cuda())
-                    pos = Variable(pos.cuda())
-                    neg = Variable(neg.cuda())
-                    labels = Variable(labels.cuda())
-                else:
-                    inputs, labels = Variable(inputs), Variable(labels)
+                    inputs = inputs.cuda()
+                    pos = pos.cuda()
+                    neg = neg.cuda()
+                    labels = labels.cuda()
+
                 # zero the parameter gradients
                 optimizer.zero_grad()
 
@@ -235,12 +233,12 @@ def train_model_triplet(model, model_verif, criterion, optimizer, scheduler, num
                 # ---------------------------------
                 labels_0 = torch.zeros(now_batch_size).long()
                 labels_1 = torch.ones(now_batch_size).long()
-                labels_0 = Variable(labels_0.cuda())
-                labels_1 = Variable(labels_1.cuda())
+                labels_0 = labels_0.cuda()
+                labels_1 = labels_1.cuda()
 
-                _, preds = torch.max(outputs.data, 1)
-                _, p_preds = torch.max(pscore.data, 1)
-                _, n_preds = torch.max(nscore.data, 1)
+                _, preds = torch.max(outputs.detach(), 1)
+                _, p_preds = torch.max(pscore.detach(), 1)
+                _, n_preds = torch.max(nscore.detach(), 1)
                 loss_id = criterion(outputs, labels)
                 loss_verif = (criterion(pscore, labels_0) + criterion(nscore, labels_1)) * 0.5 * opt.alpha
                 if opt.net_loss_model == 0:
@@ -261,9 +259,9 @@ def train_model_triplet(model, model_verif, criterion, optimizer, scheduler, num
                     running_loss += loss.item()  # * opt.batchsize
                     running_verif_loss += loss_verif.item()  # * opt.batchsize
                 else:  # for the old version like 0.3.0 and 0.3.1
-                    running_loss += loss.data[0]
-                    running_verif_loss += loss_verif.data[0]
-                running_corrects += float(torch.sum(preds == labels.data))
+                    running_loss += loss.item()
+                    running_verif_loss += loss_verif.item()
+                running_corrects += float(torch.sum(preds == labels.detach()))
                 running_verif_corrects += float(torch.sum(p_preds == 0)) + float(torch.sum(n_preds == 1))
 
             datasize = dataset_sizes['train'] // opt.batchsize * opt.batchsize
@@ -317,7 +315,6 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
     since = time.time()
 
     best_model_wts = model.state_dict()
-    last_margin = 0.0
     best_acc = 0.0
     best_loss = 10000.0
     best_epoch = -1
@@ -361,24 +358,23 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
 
                 # forward
                 outputs1, f1, outputs2, f2, feature, score = model(inputs[0], inputs[1])
-                _, id_preds1 = torch.max(outputs1.data, 1)
-                _, id_preds2 = torch.max(outputs2.data, 1)
-                _, vf_preds = torch.max(score.data, 1)
+                _, id_preds1 = torch.max(outputs1.detach(), 1)
+                _, id_preds2 = torch.max(outputs2.detach(), 1)
+                _, vf_preds = torch.max(score.detach(), 1)
                 loss_id1 = criterion(outputs1, id_labels[0])
                 loss_id2 = criterion(outputs2, id_labels[1])
                 loss_id = loss_id1 + loss_id2
                 loss_verif = criterion(score, vf_labels)
-                loss = loss_verif + loss_id
-                # loss = loss_verif
-                # if opt.net_loss_model == 0:
-                #     loss = loss_id + loss_verif
-                # elif opt.net_loss_model == 1:
-                #     loss = loss_verif
-                # elif opt.net_loss_model == 2:
-                #     loss = loss_id
-                # else:
-                #     print('opt.net_loss_model = %s    error !!!' % opt.net_loss_model)
-                #     exit()
+                opt.net_loss_model = 0
+                if opt.net_loss_model == 0:
+                    loss = loss_id + loss_verif
+                elif opt.net_loss_model == 1:
+                    loss = loss_verif
+                elif opt.net_loss_model == 2:
+                    loss = loss_id
+                else:
+                    print('opt.net_loss_model = %s    error !!!' % opt.net_loss_model)
+                    exit()
 
                 # backward + optimize only if in training phase
                 if phase == 'train':
@@ -389,10 +385,10 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
                     running_id_loss += loss.item()  # * opt.batchsize
                     running_verif_loss += loss_verif.item()  # * opt.batchsize
                 else:  # for the old version like 0.3.0 and 0.3.1
-                    running_id_loss += loss.data[0]
-                    running_verif_loss += loss_verif.data[0]
-                running_id_corrects += float(torch.sum(id_preds1 == id_labels[0].data))
-                running_id_corrects += float(torch.sum(id_preds2 == id_labels[1].data))
+                    running_id_loss += loss.item()
+                    running_verif_loss += loss_verif.item()
+                running_id_corrects += float(torch.sum(id_preds1 == id_labels[0].detach()))
+                running_id_corrects += float(torch.sum(id_preds2 == id_labels[1].detach()))
                 running_verif_corrects += float(torch.sum(vf_preds == vf_labels))
 
             datasize = dataset_sizes['train'] // opt.batchsize * opt.batchsize
@@ -410,9 +406,7 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
                 best_acc = epoch_acc
                 best_loss = epoch_loss
                 best_epoch = epoch
-                save_network(model, name, 'best_siamese')
-                save_network(model, name, 'best_siamese_' + str(opt.net_loss_model))
-                save_whole_network(model, name, 'whole_best_siamese')
+                best_model_wts = model.state_dict()
 
             y_loss[phase].append(epoch_id_loss)
             y_err[phase].append(1.0 - epoch_id_acc)
@@ -428,9 +422,13 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
     print('best_epoch = %s     best_loss = %s     best_acc = %s' % (best_epoch, best_loss, best_acc))
     print('Training complete in {:.0f}m {:.0f}s'.format(
         time_elapsed // 60, time_elapsed % 60))
-    # print('Best val Acc: {:4f}'.format(best_acc))
 
     # load best model weights
+    model.load_state_dict(best_model_wts)
+    save_network(model, name, 'best_siamese')
+    save_network(model, name, 'best_siamese_' + str(opt.net_loss_model))
+    save_whole_network(model, name, 'whole_best_siamese')
+    # load last model weights
     model.load_state_dict(last_model_wts)
     save_network(model, name, 'last_siamese')
     save_network(model, name, 'last_siamese_' + str(opt.net_loss_model))
@@ -466,8 +464,8 @@ def train_gcn(train_loader, model_siamese, model_gcn, loss_gcn_fn, optimizer_gcn
             target = target1
             outputs = model_gcn(feature, adj)  # for SGGNN_GCN
             outputs_org = outputs
-            _, preds = torch.max(outputs.data, 1)
-            running_corrects = float(torch.sum(preds == target.data))
+            _, preds = torch.max(outputs.detach(), 1)
+            running_corrects = float(torch.sum(preds == target.detach()))
             epoch_id_acc = running_corrects / len(preds)
 
             if type(outputs) not in (tuple, list):
@@ -496,8 +494,8 @@ def train_gcn(train_loader, model_siamese, model_gcn, loss_gcn_fn, optimizer_gcn
         save_whole_network(model_gcn, name, 'whole_gcn' + str(epoch))
     time_elapsed = time.time() - since
     print('time = %f' % (time_elapsed))
-    save_network(model_gcn, name, 'best_gcn')
-    save_whole_network(model_gcn, name, 'whole_best_gcn')
+    save_network(model_gcn, name, 'last_gcn')
+    save_whole_network(model_gcn, name, 'whole_last_gcn')
     return model_gcn
 
 
@@ -536,9 +534,9 @@ if not os.path.isdir(dir_name):
 with open('%s/opts.yaml' % dir_name, 'w') as fp:
     yaml.dump(vars(opt), fp, default_flow_style=False)
 
-stage_1 = False
+stage_1 = True
 stage_2 = False
-stage_3 = True
+stage_3 = False
 
 if stage_1:
     embedding_net = ft_net_dense(len(class_names))
@@ -581,12 +579,6 @@ if stage_2:
     model_gcn = Sggnn_gcn()
     # model_gcn = load_network_easy(model_gcn, name, 'best_gcn')
     print('model_gcn = %s' % model_gcn.rf.fc[0].weight[0][:5])
-    # cnt = 0
-    # for k, v in model_siamese.state_dict():
-    #     print(k, v)
-    #     cnt += 1
-    # print(cnt)
-    # exit()
 
     if use_gpu:
         model_siamese.cuda()
