@@ -28,7 +28,7 @@ except ImportError:  # will be 3.x series
 
 parser = argparse.ArgumentParser(description='Training')
 parser.add_argument('--gpu_ids', default='0', type=str, help='gpu_ids: e.g. 0  0,1,2  0,2')
-parser.add_argument('--which_epoch', default='best', type=str, help='0,1,2,3...or last')
+parser.add_argument('--which_epoch', default='last_siamese', type=str, help='0,1,2,3...or last')
 parser.add_argument('--test_dir', default='data/market/pytorch', type=str, help='./test_data')
 parser.add_argument('--name', default='sggnn', type=str, help='save model path')
 parser.add_argument('--batchsize', default=48, type=int, help='batchsize')
@@ -182,7 +182,7 @@ print('-------test-----------')
 embedding_net = ft_net_dense(751)
 # embedding_net = ft_net_dense(702)
 model_siamese = SiameseNet(embedding_net)
-model_siamese = load_network_easy(model_siamese, name)
+model_siamese = load_network_easy(model_siamese, name, opt.which_epoch)
 model_siamese = model_siamese.eval()
 if use_gpu:
     model = model_siamese.cuda()

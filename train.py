@@ -365,7 +365,7 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
                 loss_id2 = criterion(outputs2, id_labels[1])
                 loss_id = loss_id1 + loss_id2
                 loss_verif = criterion(score, vf_labels)
-                opt.net_loss_model = 0
+                # opt.net_loss_model = 0
                 if opt.net_loss_model == 0:
                     loss = loss_id + loss_verif
                 elif opt.net_loss_model == 1:
@@ -524,6 +524,8 @@ def draw_curve(current_epoch):
 # It should take around 1-2 hours on GPU. 
 #
 dir_name = os.path.join('./model', name)
+if not os.path.exists('model'):
+    os.mkdir('model')
 if not os.path.isdir(dir_name):
     os.mkdir(dir_name)
     # copyfile('./train.py', dir_name + '/train.py')
