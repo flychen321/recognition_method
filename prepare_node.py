@@ -104,10 +104,18 @@ while i < num_total - 1:
         for t in range(len(second_index)):
             feature_dif.append((train_feature[first_index[s]] - train_feature[second_index[t]]).pow(2))
 
-# feature_same = torch.Tensor(feature_same)
-# feature_dif = torch.Tensor(feature_dif)
-# dist_same = torch.sum(feature_same, -1)
-# dist_dif = torch.sum(feature_dif, -1)
+feature_same2 = torch.Tensor(len(feature_same), len(feature_same[0]))
+feature_dif2 = torch.Tensor(len(feature_dif), len(feature_dif[0]))
+print(feature_same2.shape)
+print(feature_dif2.shape)
+for i in range(len(feature_same)):
+    feature_same2[i] = torch.Tensor(feature_same[i])
+for i in range(len(feature_same)):
+    feature_dif2[i] = torch.Tensor(feature_dif[i])
+dist_same = torch.sum(feature_same2, -1)
+dist_dif = torch.sum(feature_dif2, -1)
+print(dist_same.shape)
+print(dist_dif.shape)
 print('len(feature_same) = %d' % (len(feature_same)))
 print('len(feature_dif) = %d' % (len(feature_dif)))
 
