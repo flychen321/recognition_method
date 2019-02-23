@@ -19,6 +19,7 @@ from torchvision import datasets, models, transforms
 # n_s = n*n
 # print(n_s.sum()/2)
 ######################################################################
+np.random.seed(1)
 def get_id(img_path):
     camera_id = []
     labels = []
@@ -103,7 +104,6 @@ while i < num_total - 1:
     for s in range(len(first_index)):
         for t in range(len(second_index)):
             feature_dif.append((train_feature[first_index[s]] - train_feature[second_index[t]]).pow(2))
-            distance = (train_feature[first_index[s]] - train_feature[second_index[t]]).pow(2).sum()
 
 feature_same2 = torch.Tensor(len(feature_same), len(feature_same[0]))
 feature_dif2 = torch.Tensor(len(feature_dif), len(feature_dif[0]))
@@ -121,7 +121,8 @@ print(dist_same.shape)
 print(dist_dif.shape)
 print('len(feature_same) = %d' % (len(feature_same)))
 print('len(feature_dif) = %d' % (len(feature_dif)))
-
+result = {'feature_same': feature_same2.numpy(), 'feature_dif': feature_dif2.numpy()}
+scipy.io.savemat('nodes_info.mat', result)
 exit()
 
 n = np.array(n)
