@@ -40,7 +40,7 @@ data_dir = 'data/market/pytorch/train_all'
 image_datasets = datasets.ImageFolder(data_dir)
 cams, labels = get_id(image_datasets.imgs)
 
-result = scipy.io.loadmat('pytorch_result_test.mat')
+result = scipy.io.loadmat('pytorch_result.mat')
 query_feature = torch.FloatTensor(result['query_f'])
 query_cam = result['query_cam'][0]
 query_label = result['query_label'][0]
@@ -48,7 +48,6 @@ gallery_feature = torch.FloatTensor(result['gallery_f'])
 gallery_cam = result['gallery_cam'][0]
 gallery_label = result['gallery_label'][0]
 
-result = scipy.io.loadmat('pytorch_result_train.mat')
 train_feature = torch.FloatTensor(result['train_f'])
 # train_feature = result['train_f']
 train_cam = result['train_cam'][0]
@@ -103,7 +102,6 @@ while i < num_total - 1:
     first_index = np.random.choice(part_index, int(len(part_index) / 2), replace=False)
     other_index = np.concatenate((np.arange(j), np.arange(k, num_total)), 0)
     second_index = np.random.choice(other_index, int(len(part_index) / 2 * 5), replace=False)
-    print(j)
     for s in range(len(first_index)):
         for t in range(len(second_index)):
             if first_index[s] < second_index[t]:
@@ -131,7 +129,8 @@ print(dist_same.shape)
 print(dist_dif.shape)
 print('len(feature_same) = %d' % (len(feature_same)))
 print('len(feature_dif) = %d' % (len(feature_dif)))
-result = {'feature_same': feature_same2.numpy(), 'feature_dif': feature_dif2.numpy()}
+result = {'feature_same': feature_same2.numpy(), 'feature_dif': feature_dif2.numpy(),
+          'dist_same': dist_same.numpy(), 'dist_dif': dist_dif.numpy()}
 scipy.io.savemat('nodes_info.mat', result)
 exit()
 

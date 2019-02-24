@@ -95,6 +95,7 @@ if opt.PCB:
 
 data_dir = test_dir
 dataset_list = ['gallery', 'query', 'train_all']
+# dataset_list = ['gallery', 'query']
 image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x), data_transforms) for x in dataset_list}
 dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=opt.batchsize,
                                               shuffle=False, num_workers=16) for x in dataset_list}
@@ -198,10 +199,12 @@ with torch.no_grad():
     for i in range(len(dataset_list)):
         dataset_feature.append(extract_feature(model, dataloaders[dataset_list[i]]))
 
-result = {'gallery_f': dataset_feature[0].numpy(), 'gallery_label': dataset_label[0], 'gallery_cam': dataset_cam[0],
-          'query_f': dataset_feature[1].numpy(), 'query_label': dataset_label[1], 'query_cam': dataset_cam[1]}
-scipy.io.savemat('pytorch_result_test.mat', result)
 
 if len(dataset_list) == 3:
-    result = {'train_f': dataset_feature[2].numpy(), 'train_label': dataset_label[2], 'train_cam': dataset_cam[2]}
-    scipy.io.savemat('pytorch_result_train.mat', result)
+    result = {'gallery_f': dataset_feature[0].numpy(), 'gallery_label': dataset_label[0], 'gallery_cam': dataset_cam[0],
+              'query_f': dataset_feature[1].numpy(), 'query_label': dataset_label[1], 'query_cam': dataset_cam[1],
+              'train_f': dataset_feature[2].numpy(), 'train_label': dataset_label[2], 'train_cam': dataset_cam[2]}
+else:
+    result = {'gallery_f': dataset_feature[0].numpy(), 'gallery_label': dataset_label[0], 'gallery_cam': dataset_cam[0],
+              'query_f': dataset_feature[1].numpy(), 'query_label': dataset_label[1], 'query_cam': dataset_cam[1]}
+scipy.io.savemat('pytorch_result.mat', result)

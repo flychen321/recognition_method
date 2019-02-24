@@ -20,8 +20,5 @@ import torch.nn.functional as F
 # print(index)
 # print(np.random.permutation(10))
 
-num_p_per_batch = 128
-adj = torch.FloatTensor(num_p_per_batch, num_p_per_batch).cuda().fill_(
-            1.0 / (num_p_per_batch * num_p_per_batch))
-
-print(np.random.randint(num_p_per_batch*0.2, num_p_per_batch*0.6))
+# np.random.seed(1)
+print(np.random.randint(10))
