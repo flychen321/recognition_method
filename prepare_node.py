@@ -6,7 +6,6 @@ import os
 import matplotlib
 from torchvision import datasets, models, transforms
 
-
 # dirs = os.listdir('data/market/pytorch/train_all')
 # n = []
 # for dir in dirs:
@@ -20,6 +19,8 @@ from torchvision import datasets, models, transforms
 # print(n_s.sum()/2)
 ######################################################################
 np.random.seed(1)
+
+
 def get_id(img_path):
     camera_id = []
     labels = []
@@ -87,6 +88,7 @@ while i < num_total - 1:
     n.append(part_num)
 
 i = 0
+used_couple = []
 while i < num_total - 1:
     j = i
     while i < num_total - 1 and train_label[i] == train_label[i + 1]:
@@ -98,12 +100,20 @@ while i < num_total - 1:
     part_index = np.arange(j, k)
     part_num = k - j
     part_index = np.random.permutation(part_index)
-    first_index = np.random.choice(part_index, int(len(part_index)/2), replace=False)
+    first_index = np.random.choice(part_index, int(len(part_index) / 2), replace=False)
     other_index = np.concatenate((np.arange(j), np.arange(k, num_total)), 0)
-    second_index = np.random.choice(other_index, int(len(part_index)/2 * 5), replace=False)
+    second_index = np.random.choice(other_index, int(len(part_index) / 2 * 5), replace=False)
+    print(j)
     for s in range(len(first_index)):
         for t in range(len(second_index)):
-            feature_dif.append((train_feature[first_index[s]] - train_feature[second_index[t]]).pow(2))
+            if first_index[s] < second_index[t]:
+                p = '%sa%s' % (first_index[s], second_index[t])
+            else:
+                p = '%sa%s' % (second_index[t], first_index[s])
+            # if p not in used_couple:
+            if True:
+                feature_dif.append((train_feature[first_index[s]] - train_feature[second_index[t]]).pow(2))
+                used_couple.append(p)
 
 feature_same2 = torch.Tensor(len(feature_same), len(feature_same[0]))
 feature_dif2 = torch.Tensor(len(feature_dif), len(feature_dif[0]))
@@ -130,8 +140,6 @@ print(len(train_label))
 print(n.sum())
 n.sort()
 print(n)
-
-
 
 num = 2000
 print('total num = %d   used_num = %d' % (num_total, num))
