@@ -49,14 +49,16 @@ def label_propogate(unlabled_node):
 
         loss_val = F.nll_loss(output[idx_val], labels[idx_val])
         acc_val = accuracy(output[idx_val], labels[idx_val])
-        if epoch % 5 == 0:
-            print('Epoch: {:04d}'.format(epoch + 1),
-                  'loss_train: {:.4f}'.format(loss_train.item()),
-                  'acc_train: {:.4f}'.format(acc_train.item()),
-                  'loss_val: {:.4f}'.format(loss_val.item()),
-                  'acc_val: {:.4f}'.format(acc_val.item()),
-                  'time: {:.4f}s'.format(time.time() - t))
-    exit()
+    #     if epoch % 5 == 0:
+    #         print('Epoch: {:04d}'.format(epoch + 1),
+    #               'loss_train: {:.4f}'.format(loss_train.item()),
+    #               'acc_train: {:.4f}'.format(acc_train.item()),
+    #               'loss_val: {:.4f}'.format(loss_val.item()),
+    #               'acc_val: {:.4f}'.format(acc_val.item()),
+    #               'time: {:.4f}s'.format(time.time() - t))
+    # exit()
+    index_new = F.softmax(output[idx_test])[:, 1].sort()[1]
+    return index_new
 
 
 def evaluate(qf, ql, qc, gf, gl, gc):
@@ -67,10 +69,8 @@ def evaluate(qf, ql, qc, gf, gl, gc):
     index = np.argsort(score)  # from small to large
     g_num = 100
     unlabled_node = (gf[index[:g_num]] - query).pow(2)
-    label_propogate(unlabled_node)
-    # index[:g_num] = index[:g_num][index_new_100]
-
-
+    index_new_100 = label_propogate(unlabled_node)
+    index[:g_num] = index[:g_num][index_new_100]
 
     # good index
     query_index = np.argwhere(gl == ql)
@@ -149,7 +149,8 @@ right_cnt = 0
 former_right_cnt = 0
 former_i = 0
 # print(query_label)
-for i in range(len(query_label)):
+# for i in range(len(query_label)):
+for i in range(100):
     ap_tmp, CMC_tmp = evaluate(query_feature[i], query_label[i], query_cam[i], gallery_feature, gallery_label,
                                gallery_cam)
     if CMC_tmp[0] == -1:
@@ -160,15 +161,17 @@ for i in range(len(query_label)):
 
     if CMC_tmp[0].numpy() == 1:
         right_cnt += 1
-    if i % 100 == 0 or i == len(query_label) - 1:
+    if i % 5 == 0 or i == len(query_label) - 1:
         print('i = %4d    CMC_tmp[0] = %s  real-time rank1 = %.4f  avg rank1 = %.4f' % (
         i, CMC_tmp[0].numpy(), float(right_cnt - former_right_cnt) / (i - former_i + 1), float(right_cnt) / (i + 1)))
         former_right_cnt = right_cnt
         former_i = i
 
 CMC = CMC.float()
-CMC = CMC / len(query_label)  # average CMC
-print('Rank@1:%f Rank@5:%f Rank@10:%f mAP:%f' % (CMC[0], CMC[4], CMC[9], ap / len(query_label)))
+# CMC = CMC / len(query_label)  # average CMC
+CMC = CMC / 100  # average CMC
+# print('Rank@1:%f Rank@5:%f Rank@10:%f mAP:%f' % (CMC[0], CMC[4], CMC[9], ap / len(query_label)))
+print('Rank@1:%f Rank@5:%f Rank@10:%f mAP:%f' % (CMC[0], CMC[4], CMC[9], ap / 100))
 
 # multiple-query
 CMC = torch.IntTensor(len(gallery_label)).zero_()

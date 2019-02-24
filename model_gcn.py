@@ -77,12 +77,13 @@ def load_data_reid(node_unabled, guider_path='nodes_info.mat'):
     dist_unabled = node_unabled.sum(-1)
     min_unabled = dist_unabled.min()
     max_unabled = dist_unabled.max()
+    # #very bad
     # node_same = node_same[-guider_num:]
     # node_dif = node_dif[:guider_num]
     # #large improve
-    random_index = np.random.choice(np.arange(len(node_same)), guider_num, replace=False)
+    random_index = np.random.choice(np.arange(int(len(node_same) / 2), len(node_same)), guider_num, replace=False)
     node_same = node_same[random_index]
-    random_index = np.random.choice(np.arange(len(node_dif)), guider_num, replace=False)
+    random_index = np.random.choice(np.arange(int(len(node_dif) / 10)), guider_num, replace=False)
     node_dif = node_dif[random_index]
     gcn_features = np.concatenate((node_same, node_dif, node_unabled), 0)
     same_num = len(node_same)
@@ -100,18 +101,34 @@ def load_data_reid(node_unabled, guider_path='nodes_info.mat'):
             adj_m[i][j] = distance
             adj_m[j][i] = adj_m[i][j]
 
+    # joint_num = 30
+    # sparse_num_real = min(int(joint_num * 0.5), unlabeled_num)
+    # sparse_num_gen = min(joint_num - sparse_num_real, unlabeled_num)
+    # # print('sparse_num_real = %s   sparse_num_gen = %s' % (sparse_num_real, sparse_num_gen))
+    #
+    # for i in range(total_num):
+    #     arr_index_real = np.argsort(adj_m[i][: labeled_num])
+    #     arr_index_gen = np.argsort(adj_m[i][labeled_num:]) + labeled_num
+    #     adj_m[i][arr_index_real[sparse_num_real:]] = 0  # 101 elements not zero(include itself)
+    #     adj_m[i][arr_index_gen[sparse_num_gen:]] = 0  # 101 elements not zero(include itself)
+    #     adj_m[i][arr_index_real[:sparse_num_real]] = np.exp(-adj_m[i][arr_index_real[:sparse_num_real]])
+    #     adj_m[i][arr_index_gen[:sparse_num_gen]] = np.exp(-adj_m[i][arr_index_gen[:sparse_num_gen]])
+
     joint_num = 30
-    sparse_num_real = min(int(joint_num * 0.5), unlabeled_num)
-    sparse_num_gen = min(joint_num - sparse_num_real, unlabeled_num)
-    print('sparse_num_real = %s   sparse_num_gen = %s' % (sparse_num_real, sparse_num_gen))
+    sparse_num_same = min(joint_num, same_num)
+    sparse_num_dif = min(joint_num, dif_num)
+    sparse_num_unabled = min(joint_num, unlabeled_num)
 
     for i in range(total_num):
-        arr_index_real = np.argsort(adj_m[i][: labeled_num])
-        arr_index_gen = np.argsort(adj_m[i][labeled_num:]) + labeled_num
-        adj_m[i][arr_index_real[sparse_num_real:]] = 0  # 101 elements not zero(include itself)
-        adj_m[i][arr_index_gen[sparse_num_gen:]] = 0  # 101 elements not zero(include itself)
-        adj_m[i][arr_index_real[:sparse_num_real]] = np.exp(-adj_m[i][arr_index_real[:sparse_num_real]])
-        adj_m[i][arr_index_gen[:sparse_num_gen]] = np.exp(-adj_m[i][arr_index_gen[:sparse_num_gen]])
+        arr_index_same = np.argsort(adj_m[i][: same_num])
+        arr_index_dif = np.argsort(adj_m[i][same_num:same_num + dif_num]) + same_num
+        arr_index_unabled = np.argsort(adj_m[i][labeled_num:]) + labeled_num
+        adj_m[i][arr_index_same[sparse_num_same:]] = 0  # 101 elements not zero(include itself)
+        adj_m[i][arr_index_dif[sparse_num_dif:]] = 0  # 101 elements not zero(include itself)
+        adj_m[i][arr_index_unabled[sparse_num_unabled:]] = 0  # 101 elements not zero(include itself)
+        adj_m[i][arr_index_same[:sparse_num_same]] = np.exp(-adj_m[i][arr_index_same[:sparse_num_same]])
+        adj_m[i][arr_index_dif[:sparse_num_dif]] = np.exp(-adj_m[i][arr_index_dif[:sparse_num_dif]])
+        adj_m[i][arr_index_unabled[:sparse_num_unabled]] = np.exp(-adj_m[i][arr_index_unabled[:sparse_num_unabled]])
 
     for i in range(total_num):
         for j in range(total_num):
