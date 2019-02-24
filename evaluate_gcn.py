@@ -23,11 +23,11 @@ def label_propogate(unlabled_node):
     # Model and optimizer
     adj, features, labels, idx_train, idx_val, idx_test = load_data_reid(unlabled_node)
     model = GCN(nfeat=features.shape[1],
-                nhid=32,
+                nhid=64,
                 nclass=labels.max().item() + 1,
                 dropout=0.5)
     optimizer = optim.Adam(model.parameters(),
-                           lr=0.001, weight_decay=5e-4)
+                           lr=0.01, weight_decay=5e-4)
     if use_gpu:
         model.cuda()
         features = features.cuda()
@@ -37,7 +37,7 @@ def label_propogate(unlabled_node):
         idx_val = idx_val.cuda()
         idx_test = idx_test.cuda()
 
-    for epoch in range(5000):
+    for epoch in range(50):
         t = time.time()
         model.train()
         optimizer.zero_grad()
@@ -49,12 +49,14 @@ def label_propogate(unlabled_node):
 
         loss_val = F.nll_loss(output[idx_val], labels[idx_val])
         acc_val = accuracy(output[idx_val], labels[idx_val])
-        print('Epoch: {:04d}'.format(epoch + 1),
-              'loss_train: {:.4f}'.format(loss_train.item()),
-              'acc_train: {:.4f}'.format(acc_train.item()),
-              'loss_val: {:.4f}'.format(loss_val.item()),
-              'acc_val: {:.4f}'.format(acc_val.item()),
-              'time: {:.4f}s'.format(time.time() - t))
+        if epoch % 5 == 0:
+            print('Epoch: {:04d}'.format(epoch + 1),
+                  'loss_train: {:.4f}'.format(loss_train.item()),
+                  'acc_train: {:.4f}'.format(acc_train.item()),
+                  'loss_val: {:.4f}'.format(loss_val.item()),
+                  'acc_val: {:.4f}'.format(acc_val.item()),
+                  'time: {:.4f}s'.format(time.time() - t))
+    exit()
 
 
 def evaluate(qf, ql, qc, gf, gl, gc):

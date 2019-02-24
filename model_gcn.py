@@ -68,8 +68,8 @@ def load_data(path="../data/cora/", dataset="cora"):
 def load_data_reid(node_unabled, guider_path='nodes_info.mat'):
     guider_num = 200
     m = loadmat(guider_path)
-    print('type(m) = %s' % type(m))
-    print(m.keys())
+    # print('type(m) = %s' % type(m))
+    # print(m.keys())
     node_same = m['feature_same']
     dist_same = node_same.sum(-1)
     node_dif = m['feature_dif']
@@ -77,8 +77,13 @@ def load_data_reid(node_unabled, guider_path='nodes_info.mat'):
     dist_unabled = node_unabled.sum(-1)
     min_unabled = dist_unabled.min()
     max_unabled = dist_unabled.max()
-    node_same = node_same[-guider_num:]
-    node_dif = node_dif[:guider_num]
+    # node_same = node_same[-guider_num:]
+    # node_dif = node_dif[:guider_num]
+    # #large improve
+    random_index = np.random.choice(np.arange(len(node_same)), guider_num, replace=False)
+    node_same = node_same[random_index]
+    random_index = np.random.choice(np.arange(len(node_dif)), guider_num, replace=False)
+    node_dif = node_dif[random_index]
     gcn_features = np.concatenate((node_same, node_dif, node_unabled), 0)
     same_num = len(node_same)
     dif_num = len(node_dif)
@@ -95,9 +100,9 @@ def load_data_reid(node_unabled, guider_path='nodes_info.mat'):
             adj_m[i][j] = distance
             adj_m[j][i] = adj_m[i][j]
 
-    joint_num = 100
-    sparse_num_real = int(joint_num * 0.5)
-    sparse_num_gen = joint_num - sparse_num_real
+    joint_num = 30
+    sparse_num_real = min(int(joint_num * 0.5), unlabeled_num)
+    sparse_num_gen = min(joint_num - sparse_num_real, unlabeled_num)
     print('sparse_num_real = %s   sparse_num_gen = %s' % (sparse_num_real, sparse_num_gen))
 
     for i in range(total_num):
@@ -114,17 +119,20 @@ def load_data_reid(node_unabled, guider_path='nodes_info.mat'):
                 adj_m[j][i] = adj_m[i][j]
             elif math.fabs(adj_m[j][i]) > 1e-09:
                 adj_m[i][j] = adj_m[j][i]
+    # adj_m = np.exp(-adj_m)
     adj = sp.coo_matrix(adj_m)
     # build symmetric adjacency matrix
     adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj)
 
-    gcn_features = normalize(gcn_features)
+    # gcn_features = normalize(gcn_features)
     adj = normalize(adj + sp.eye(adj.shape[0]))
 
     train_ratio = 0.8
     val_ratio = 1 - train_ratio
-    idx_train = np.concatenate((np.arange(0, int(same_num * train_ratio)), np.arange(same_num, same_num + dif_num * train_ratio)))
-    idx_val = np.concatenate((np.arange(int(same_num * train_ratio), same_num), np.arange(same_num + dif_num * train_ratio, same_num + dif_num)))
+    idx_train = np.concatenate(
+        (np.arange(0, int(same_num * train_ratio)), np.arange(same_num, same_num + dif_num * train_ratio)))
+    idx_val = np.concatenate((np.arange(int(same_num * train_ratio), same_num),
+                              np.arange(same_num + dif_num * train_ratio, same_num + dif_num)))
     idx_test = np.arange(labeled_num, total_num)
 
     gcn_features = torch.FloatTensor(np.array(gcn_features))
@@ -216,7 +224,7 @@ class GCN(nn.Module):
     def forward(self, x, adj):
         x = F.relu6(self.gc1(x, adj))
         x = F.dropout(x, self.dropout, training=self.training)
-        # x = F.relu6(self.gc2(x, adj))
+        # x = F.relu(self.gc2(x, adj))
         # x = F.dropout(x, self.dropout, training=self.training)
         # x = F.relu6(self.gc3(x, adj))
         # x = F.dropout(x, self.dropout, training=self.training)
