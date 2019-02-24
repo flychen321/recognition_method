@@ -40,7 +40,7 @@ data_dir = 'data/market/pytorch/train_all'
 image_datasets = datasets.ImageFolder(data_dir)
 cams, labels = get_id(image_datasets.imgs)
 
-result = scipy.io.loadmat('pytorch_result.mat')
+result = scipy.io.loadmat('pytorch_result_market.mat')
 query_feature = torch.FloatTensor(result['query_f'])
 query_cam = result['query_cam'][0]
 query_label = result['query_label'][0]
@@ -113,23 +113,25 @@ while i < num_total - 1:
                 feature_dif.append((train_feature[first_index[s]] - train_feature[second_index[t]]).pow(2))
                 used_couple.append(p)
 
-feature_same2 = torch.Tensor(len(feature_same), len(feature_same[0]))
-feature_dif2 = torch.Tensor(len(feature_dif), len(feature_dif[0]))
-print(feature_same2.shape)
-print(feature_dif2.shape)
+node_same = torch.Tensor(len(feature_same), len(feature_same[0]))
+node_dif = torch.Tensor(len(feature_dif), len(feature_dif[0]))
+print(node_same.shape)
+print(node_dif.shape)
 for i in range(len(feature_same)):
-    feature_same2[i] = torch.Tensor(feature_same[i])
+    node_same[i] = torch.Tensor(feature_same[i])
 for i in range(len(feature_dif)):
-    feature_dif2[i] = torch.Tensor(feature_dif[i])
-dist_same = torch.sum(feature_same2, -1)
-dist_dif = torch.sum(feature_dif2, -1)
+    node_dif[i] = torch.Tensor(feature_dif[i])
+dist_same = torch.sum(node_same, -1)
+dist_dif = torch.sum(node_dif, -1)
 dist_same_sorted = dist_same.sort()
+node_same = node_same[dist_same_sorted[1]]
 dist_dif_sorted = dist_dif.sort()
+node_dif = node_dif[dist_dif_sorted[1]]
 print(dist_same.shape)
 print(dist_dif.shape)
 print('len(feature_same) = %d' % (len(feature_same)))
 print('len(feature_dif) = %d' % (len(feature_dif)))
-result = {'feature_same': feature_same2.numpy(), 'feature_dif': feature_dif2.numpy(),
+result = {'feature_same': node_same.numpy(), 'feature_dif': node_dif.numpy(),
           'dist_same': dist_same.numpy(), 'dist_dif': dist_dif.numpy()}
 scipy.io.savemat('nodes_info.mat', result)
 exit()

@@ -6,6 +6,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 import scipy.sparse as sp
+import pandas as pd
+# import matplotlib.pyplot as plt
+from scipy.io import loadmat
+from scipy.io import savemat
+import time
+import random
+import os
 
 
 def encode_onehot(labels):
@@ -56,6 +63,79 @@ def load_data(path="../data/cora/", dataset="cora"):
     idx_test = torch.LongTensor(idx_test)
 
     return adj, features, labels, idx_train, idx_val, idx_test
+
+
+def load_data_reid(node_unabled, guider_path='nodes_info.mat'):
+    guider_num = 200
+    m = loadmat(guider_path)
+    print('type(m) = %s' % type(m))
+    print(m.keys())
+    node_same = m['feature_same']
+    dist_same = node_same.sum(-1)
+    node_dif = m['feature_dif']
+    dist_dif = node_dif.sum(-1)
+    dist_unabled = node_unabled.sum(-1)
+    min_unabled = dist_unabled.min()
+    max_unabled = dist_unabled.max()
+    node_same = node_same[-guider_num:]
+    node_dif = node_dif[:guider_num]
+    gcn_features = np.concatenate((node_same, node_dif, node_unabled), 0)
+    same_num = len(node_same)
+    dif_num = len(node_dif)
+    total_num = len(gcn_features)
+    labeled_num = same_num + dif_num
+    unlabeled_num = len(node_unabled)
+    labels = np.concatenate((np.ones(same_num), np.zeros(dif_num), np.ones(unlabeled_num)), 0)
+    adj_m = np.zeros(shape=(total_num, total_num), dtype=np.float32)
+    for i in range(total_num):
+        for j in range(i):
+            dif_feature = gcn_features[i] - gcn_features[j]
+            temp_adj_value = dif_feature ** 2
+            distance = np.sum(temp_adj_value)
+            adj_m[i][j] = distance
+            adj_m[j][i] = adj_m[i][j]
+
+    joint_num = 100
+    sparse_num_real = int(joint_num * 0.5)
+    sparse_num_gen = joint_num - sparse_num_real
+    print('sparse_num_real = %s   sparse_num_gen = %s' % (sparse_num_real, sparse_num_gen))
+
+    for i in range(total_num):
+        arr_index_real = np.argsort(adj_m[i][: labeled_num])
+        arr_index_gen = np.argsort(adj_m[i][labeled_num:]) + labeled_num
+        adj_m[i][arr_index_real[sparse_num_real:]] = 0  # 101 elements not zero(include itself)
+        adj_m[i][arr_index_gen[sparse_num_gen:]] = 0  # 101 elements not zero(include itself)
+        adj_m[i][arr_index_real[:sparse_num_real]] = np.exp(-adj_m[i][arr_index_real[:sparse_num_real]])
+        adj_m[i][arr_index_gen[:sparse_num_gen]] = np.exp(-adj_m[i][arr_index_gen[:sparse_num_gen]])
+
+    for i in range(total_num):
+        for j in range(total_num):
+            if math.fabs(adj_m[i][j]) > 1e-09:
+                adj_m[j][i] = adj_m[i][j]
+            elif math.fabs(adj_m[j][i]) > 1e-09:
+                adj_m[i][j] = adj_m[j][i]
+    adj = sp.coo_matrix(adj_m)
+    # build symmetric adjacency matrix
+    adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj)
+
+    gcn_features = normalize(gcn_features)
+    adj = normalize(adj + sp.eye(adj.shape[0]))
+
+    train_ratio = 0.8
+    val_ratio = 1 - train_ratio
+    idx_train = np.concatenate((np.arange(0, int(same_num * train_ratio)), np.arange(same_num, same_num + dif_num * train_ratio)))
+    idx_val = np.concatenate((np.arange(int(same_num * train_ratio), same_num), np.arange(same_num + dif_num * train_ratio, same_num + dif_num)))
+    idx_test = np.arange(labeled_num, total_num)
+
+    gcn_features = torch.FloatTensor(np.array(gcn_features))
+    labels = torch.LongTensor(labels)
+    adj = sparse_mx_to_torch_sparse_tensor(adj)
+
+    idx_train = torch.LongTensor(idx_train)
+    idx_val = torch.LongTensor(idx_val)
+    idx_test = torch.LongTensor(idx_test)
+
+    return adj, gcn_features, labels, idx_train, idx_val, idx_test
 
 
 def normalize(mx):
@@ -136,8 +216,8 @@ class GCN(nn.Module):
     def forward(self, x, adj):
         x = F.relu6(self.gc1(x, adj))
         x = F.dropout(x, self.dropout, training=self.training)
-        x = F.relu6(self.gc2(x, adj))
-        x = F.dropout(x, self.dropout, training=self.training)
+        # x = F.relu6(self.gc2(x, adj))
+        # x = F.dropout(x, self.dropout, training=self.training)
         # x = F.relu6(self.gc3(x, adj))
         # x = F.dropout(x, self.dropout, training=self.training)
         # x = F.relu6(self.gc4(x, adj))
@@ -286,6 +366,7 @@ class Random_walk(nn.Module):
     def __init__(self, model):
         super(Random_walk, self).__init__()
         self.classifier = model.classifier.classifier
+
     def forward(self, qf, gf):
         use_gpu = torch.cuda.is_available()
         batch_size = len(qf)
@@ -309,7 +390,7 @@ class Random_walk(nn.Module):
             # w[i] = self.preprocess_adj(w[i])
             w[i] = self.preprocess_sggnn_adj(w[i])
             for j in range(d.shape[-1]):
-                #or without d -> t
+                # or without d -> t
                 d_new[i, :, j] = torch.mm(d[i, :, j].unsqueeze(0), w[i])
                 d_new[i, :, j] = ratio * d_new[i, :, j] + (1 - ratio) * d[i, :, j]
         # 1 for similar & 0 for different
@@ -334,8 +415,3 @@ class Random_walk(nn.Module):
         """normalize adjacency matrix."""
         adj = F.softmax((adj - 100 * adj.diag().diag()), 0)
         return adj
-
-
-
-
-

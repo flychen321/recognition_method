@@ -4,14 +4,57 @@ import numpy as np
 import time
 import os
 import matplotlib
-
+from model_gcn import load_data_reid
+import torch.nn.functional as F
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
-
+from model_gcn import GCN, accuracy
+import torch.optim as optim
+from torch.optim import lr_scheduler
 #######################################################################
 # Evaluate
 
-cam_metric = torch.zeros(6, 6)
+# cam_metric = torch.zeros(6, 6)
+cam_metric = torch.zeros(8, 8)
+
+use_gpu = torch.cuda.is_available()
+
+def label_propogate(unlabled_node):
+    # Model and optimizer
+    adj, features, labels, idx_train, idx_val, idx_test = load_data_reid(unlabled_node)
+    model = GCN(nfeat=features.shape[1],
+                nhid=32,
+                nclass=labels.max().item() + 1,
+                dropout=0.5)
+    optimizer = optim.Adam(model.parameters(),
+                           lr=0.001, weight_decay=5e-4)
+    if use_gpu:
+        model.cuda()
+        features = features.cuda()
+        adj = adj.cuda()
+        labels = labels.cuda()
+        idx_train = idx_train.cuda()
+        idx_val = idx_val.cuda()
+        idx_test = idx_test.cuda()
+
+    for epoch in range(5000):
+        t = time.time()
+        model.train()
+        optimizer.zero_grad()
+        output = model(features, adj)
+        loss_train = F.nll_loss(output[idx_train], labels[idx_train])
+        acc_train = accuracy(output[idx_train], labels[idx_train])
+        loss_train.backward()
+        optimizer.step()
+
+        loss_val = F.nll_loss(output[idx_val], labels[idx_val])
+        acc_val = accuracy(output[idx_val], labels[idx_val])
+        print('Epoch: {:04d}'.format(epoch + 1),
+              'loss_train: {:.4f}'.format(loss_train.item()),
+              'acc_train: {:.4f}'.format(acc_train.item()),
+              'loss_val: {:.4f}'.format(loss_val.item()),
+              'acc_val: {:.4f}'.format(acc_val.item()),
+              'time: {:.4f}s'.format(time.time() - t))
 
 
 def evaluate(qf, ql, qc, gf, gl, gc):
@@ -20,6 +63,13 @@ def evaluate(qf, ql, qc, gf, gl, gc):
     score = score.cpu().numpy()
     # predict index
     index = np.argsort(score)  # from small to large
+    g_num = 100
+    unlabled_node = (gf[index[:g_num]] - query).pow(2)
+    label_propogate(unlabled_node)
+    # index[:g_num] = index[:g_num][index_new_100]
+
+
+
     # good index
     query_index = np.argwhere(gl == ql)
     # same camera
@@ -70,7 +120,7 @@ def compute_mAP(index, qc, good_index, junk_index):
 
 
 ######################################################################
-result = scipy.io.loadmat('pytorch_result.mat')
+result = scipy.io.loadmat('pytorch_result_duke.mat')
 query_feature = torch.FloatTensor(result['query_f'])
 query_cam = result['query_cam'][0]
 query_label = result['query_label'][0]
