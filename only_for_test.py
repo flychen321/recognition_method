@@ -39,4 +39,6 @@ i =   20    CMC_tmp[0] = 0  real-time rank1 = 0.0000  avg rank1 = 0.1905
 i =   25    CMC_tmp[0] = 0  real-time rank1 = 0.0000  avg rank1 = 0.1538
 i =   30    CMC_tmp[0] = 0  real-time rank1 = 0.1667  avg rank1 = 0.1613
 Rank@1:0.140000 Rank@5:0.360000 Rank@10:0.540000 mAP:0.099383
-Rank@1:0.120000 Rank@5:0.350000 Rank@10:0.530000 mAP:0.084644
+Rank@1:0.120000 Rank@5:0.350000 Rank@10:0.530000 mAP:0.
+
+Rank@1:0.400000 Rank@5:0.500000 Rank@10:0.630000 mAP:0.189465

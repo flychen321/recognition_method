@@ -8,7 +8,8 @@ from model_gcn import load_data_reid
 import torch.nn.functional as F
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
-from model_gcn import GCN, accuracy
+from model_gcn import GCN, accuracy, Random_walk
+from model_siamese import ft_net_dense, SiameseNet, load_network_easy
 import torch.optim as optim
 from torch.optim import lr_scheduler
 #######################################################################
@@ -18,6 +19,8 @@ from torch.optim import lr_scheduler
 cam_metric = torch.zeros(8, 8)
 
 use_gpu = torch.cuda.is_available()
+
+random_walk = Random_walk()
 
 def label_propogate(unlabled_node):
     # Model and optimizer
@@ -57,7 +60,7 @@ def label_propogate(unlabled_node):
     #               'acc_val: {:.4f}'.format(acc_val.item()),
     #               'time: {:.4f}s'.format(time.time() - t))
     # exit()
-    index_new = F.softmax(output[idx_test])[:, 1].sort()[1]
+    index_new = F.softmax(output[idx_test])[:, 0].sort()[1]
     return index_new
 
 
@@ -68,8 +71,11 @@ def evaluate(qf, ql, qc, gf, gl, gc):
     # predict index
     index = np.argsort(score)  # from small to large
     g_num = 100
-    unlabled_node = (gf[index[:g_num]] - query).pow(2)
-    index_new_100 = label_propogate(unlabled_node)
+    # unlabled_node = (gf[index[:g_num]] - query).pow(2)
+    # index_new_100 = label_propogate(unlabled_node)
+    # index[:g_num] = index[:g_num][index_new_100]
+    # #or
+    index_new_100 = random_walk(qf.unsqueeze(0), gf[index[:g_num]].unsqueeze(0))
     index[:g_num] = index[:g_num][index_new_100]
 
     # good index

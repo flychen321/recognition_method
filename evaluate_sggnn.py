@@ -17,12 +17,12 @@ print('-------evaluate-----------')
 name = 'sggnn'
 use_gpu = torch.cuda.is_available()
 
-embedding_net = ft_net_dense(751)
-# embedding_net = ft_net_dense(702)
-model_siamese = SiameseNet(embedding_net)
-model_siamese = load_network_easy(model_siamese, name)
-model_siamese = model_siamese.eval()
-model_gcn = Random_walk(model_siamese)
+# embedding_net = ft_net_dense(751)
+# # embedding_net = ft_net_dense(702)
+# model_siamese = SiameseNet(embedding_net)
+# model_siamese = load_network_easy(model_siamese, name)
+# model_siamese = model_siamese.eval()
+model_gcn = Random_walk()
 if use_gpu:
     model = model_gcn.cuda()
 
@@ -101,7 +101,7 @@ def compute_mAP(index, qc, good_index, junk_index):
 
 
 ######################################################################
-result = scipy.io.loadmat('pytorch_result_test.mat')
+result = scipy.io.loadmat('pytorch_result.mat')
 query_feature = torch.FloatTensor(result['query_f'])
 query_cam = result['query_cam'][0]
 query_label = result['query_label'][0]

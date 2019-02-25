@@ -66,7 +66,7 @@ def load_data(path="../data/cora/", dataset="cora"):
 
 
 def load_data_reid(node_unabled, guider_path='nodes_info.mat'):
-    guider_num = 200
+    guider_num = 1000
     m = loadmat(guider_path)
     # print('type(m) = %s' % type(m))
     # print(m.keys())
@@ -77,14 +77,15 @@ def load_data_reid(node_unabled, guider_path='nodes_info.mat'):
     dist_unabled = node_unabled.sum(-1)
     min_unabled = dist_unabled.min()
     max_unabled = dist_unabled.max()
+
     # #very bad
     # node_same = node_same[-guider_num:]
     # node_dif = node_dif[:guider_num]
     # #large improve
-    random_index = np.random.choice(np.arange(int(len(node_same) / 2), len(node_same)), guider_num, replace=False)
-    node_same = node_same[random_index]
-    random_index = np.random.choice(np.arange(int(len(node_dif) / 10)), guider_num, replace=False)
-    node_dif = node_dif[random_index]
+    # random_index = np.random.choice(np.arange(int(len(node_same) / 2), len(node_same)), guider_num, replace=False)
+    # node_same = node_same[random_index]
+    # random_index = np.random.choice(np.arange(int(len(node_dif) / 100)), guider_num, replace=False)
+    # node_dif = node_dif[random_index]
     gcn_features = np.concatenate((node_same, node_dif, node_unabled), 0)
     same_num = len(node_same)
     dif_num = len(node_dif)
@@ -388,9 +389,8 @@ class Sggnn_prepare_test(nn.Module):
 
 
 class Random_walk(nn.Module):
-    def __init__(self, model):
+    def __init__(self):
         super(Random_walk, self).__init__()
-        self.classifier = model.classifier.classifier
 
     def forward(self, qf, gf):
         use_gpu = torch.cuda.is_available()
@@ -407,23 +407,17 @@ class Random_walk(nn.Module):
             for j in range(num_g_per_id):
                 w[:, i, j] = (gf[:, i] - gf[:, j]).pow(2).sum(-1)
                 w[:, i, j] = (-w[:, i, j]).exp()
-                # w[i, :] = w[i, :] * (-3.0)
-                # #or
-                # w[:, i, j] = F.softmax(self.classifier.classifier((gf[:, i] - gf[:, j]).pow(2)), -1)[:, -1]
         ratio = 0.95
         for i in range(batch_size):
             # w[i] = self.preprocess_adj(w[i])
             w[i] = self.preprocess_sggnn_adj(w[i])
             for j in range(d.shape[-1]):
-                # or without d -> t
                 d_new[i, :, j] = torch.mm(d[i, :, j].unsqueeze(0), w[i])
                 d_new[i, :, j] = ratio * d_new[i, :, j] + (1 - ratio) * d[i, :, j]
         # 1 for similar & 0 for different
         # d_new is different from (pf - gf).pow(2)
         result = d_new.pow(2).sum(-1)
         result = (-result).exp()
-        # #or
-        # result = F.softmax(self.classifier(d_new), -1)[:, :, -1]
         _, index = torch.sort(result, -1, descending=True)
         return index
 
