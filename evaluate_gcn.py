@@ -8,7 +8,7 @@ from model_gcn import load_data_reid
 import torch.nn.functional as F
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
-from model_gcn import GCN, accuracy, Random_walk
+from model_gcn import GCN, accuracy, Random_walk, random_walk_guider
 from model_siamese import ft_net_dense, SiameseNet, load_network_easy
 import torch.optim as optim
 from torch.optim import lr_scheduler
@@ -60,7 +60,7 @@ def label_propogate(unlabled_node):
     #               'acc_val: {:.4f}'.format(acc_val.item()),
     #               'time: {:.4f}s'.format(time.time() - t))
     # exit()
-    index_new = F.softmax(output[idx_test])[:, 0].sort()[1]
+    index_new = F.softmax(output[idx_test], 0)[:, 0].sort()[1]
     return index_new
 
 
@@ -71,12 +71,15 @@ def evaluate(qf, ql, qc, gf, gl, gc):
     # predict index
     index = np.argsort(score)  # from small to large
     g_num = 100
-    # unlabled_node = (gf[index[:g_num]] - query).pow(2)
-    # index_new_100 = label_propogate(unlabled_node)
+    unlabled_node = (gf[index[:g_num]] - query).pow(2)
+    index_new_100 = label_propogate(unlabled_node)
+    index[:g_num] = index[:g_num][index_new_100]
+    # #or
+    # index_new_100 = random_walk(qf.unsqueeze(0), gf[index[:g_num]].unsqueeze(0))
     # index[:g_num] = index[:g_num][index_new_100]
     # #or
-    index_new_100 = random_walk(qf.unsqueeze(0), gf[index[:g_num]].unsqueeze(0))
-    index[:g_num] = index[:g_num][index_new_100]
+    # index_new_100 = random_walk_guider(qf, gf[index[:g_num]])
+    # index[:g_num] = index[:g_num][index_new_100]
 
     # good index
     query_index = np.argwhere(gl == ql)

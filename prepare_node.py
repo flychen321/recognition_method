@@ -133,6 +133,7 @@ def get_original_node():
 
 def get_guider_node(node_same, node_dif):
     use_gpu = torch.cuda.is_available()
+    node_dif = node_dif[node_dif.sum(-1).sort()[1][:int(len(node_dif)/2)]]
     cluster_num = min(2000, len(node_same))
     thre_num = int(len(node_same) / 1000)
     cluster_index = np.random.choice(np.arange(len(node_same)), cluster_num, replace=False)
@@ -158,21 +159,22 @@ def get_guider_node(node_same, node_dif):
     thre_dif = small_cluster_dif.mean()
 
     center_num = 1000
-    iterate_num = center_num * 2
-    node_same_cluster = torch.Tensor(center_num, node_same.shape[-1])
+    iterate_num = center_num
+    node_same_cluster = torch.Tensor(center_num*2, node_same.shape[-1])
     if use_gpu:
         node_same_cluster = node_same_cluster.cuda()
     i = 0
     j = 0
     num = []
-    thre_same *= 1.0
+    thre_same *= 2
     while i < iterate_num and node_same.shape[0] > 100:
         index = np.random.randint(len(node_same))
         # index = i % len(node_same)
         center = node_same[index]
         mid = (center - node_same).pow(2).sum(-1)
-        if (mid < thre_same).sum() >= 2:
-            node_same_cluster[j] = center
+        if (mid < thre_same).sum() >= 3:
+            # node_same_cluster[j] = center
+            node_same_cluster[j] = node_same[mid < thre_same].mean(0)
             node_same = node_same[mid >= thre_same]
             # print((mid < thre_same).sum())
             num.append((mid < thre_same).sum())
@@ -182,16 +184,16 @@ def get_guider_node(node_same, node_dif):
     print(len(num))
     print(sum(num))
     print(num)
-
+    print(i, j, node_same.shape[0])
     center_num = 1000
-    iterate_num = center_num * 2
+    iterate_num = center_num
     node_dif_cluster = torch.Tensor(center_num, node_dif.shape[-1])
     if use_gpu:
         node_dif_cluster = node_dif_cluster.cuda()
     i = 0
     j = 0
     num = []
-    thre_dif *= 1.0
+    thre_dif *= 2.0
     while i < iterate_num and node_dif.shape[0] > 100:
         index = np.random.randint(len(node_dif))
         # index = i % len(node_same)
@@ -208,6 +210,8 @@ def get_guider_node(node_same, node_dif):
     print(len(num))
     print(sum(num))
     print(num)
+    print(i, j, node_dif.shape[0])
+
     print('len(node_same_cluster) = %d' % (len(node_same_cluster)))
     print('len(node_dif_cluster) = %d' % (len(node_dif_cluster)))
     result = {'feature_same': node_same_cluster.cpu().numpy(), 'feature_dif': node_dif_cluster.cpu().numpy()}

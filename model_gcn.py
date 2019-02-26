@@ -163,6 +163,22 @@ def load_data_reid(node_unabled, guider_path='nodes_info.mat'):
 
     return adj, gcn_features, labels, idx_train, idx_val, idx_test
 
+def random_walk_guider(qf, gf=None):
+    use_gpu = torch.cuda.is_available()
+    m = loadmat('nodes_info.mat')
+    node_same = m['feature_same']
+    node_dif = m['feature_dif']
+    node_guider = np.concatenate((node_same, node_dif), 0)
+    node_guider = torch.from_numpy(node_same).cuda()
+    if gf is not None:
+        feature = (qf - gf).pow(2)
+    else:
+        feature = qf.pow(2)
+    dist = torch.Tensor(len(feature)).zero_().cuda()
+    for i in np.arange(len(feature)):
+        dist[i] = (feature[i] - node_guider).pow(2).sum(-1).mean()
+    _, index = torch.sort(dist, descending=False)
+    return index
 
 def normalize(mx):
     """Row-normalize sparse matrix"""
@@ -416,6 +432,7 @@ class Random_walk(nn.Module):
                 d_new[i, :, j] = ratio * d_new[i, :, j] + (1 - ratio) * d[i, :, j]
         # 1 for similar & 0 for different
         # d_new is different from (pf - gf).pow(2)
+        # index = random_walk_guider(d_new[0])
         result = d_new.pow(2).sum(-1)
         result = (-result).exp()
         _, index = torch.sort(result, -1, descending=True)
