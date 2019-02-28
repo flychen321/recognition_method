@@ -100,10 +100,15 @@ class SiameseDataset(datasets.ImageFolder):
             img2 = self.transform(img2)
         # #need to refine
         # #for self supervision by shuffle in one image
-        shuffle_flag = np.random.randint(0, 3)
-        if siamese_target == 1 and shuffle_flag == 1:
-            img2 = torch.cat((img2[:, int(img2.size(1) / 2):], img2[:, :int(img2.size(1) / 2)]), 1)
-            siamese_target = 0
+        # shuffle_flag = np.random.randint(0, 3)
+        # if siamese_target == 1 and shuffle_flag == 1:
+        #     # img2 = torch.cat((img2[:, int(img2.size(1) / 2):], img2[:, :int(img2.size(1) / 2)]), 1)
+        #     temp = img2.cpu().numpy()
+        #     temp = np.transpose(temp, (2, 1, 0))
+        #     np.random.shuffle(temp)
+        #     temp = np.transpose(temp, (2, 1, 0))
+        #     img2 = torch.from_numpy(temp)
+        #     siamese_target = 0
 
         return (img1, img2), siamese_target, (int(label1), int(label2))
 
