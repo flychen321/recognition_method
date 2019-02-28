@@ -71,15 +71,18 @@ def evaluate(qf, ql, qc, gf, gl, gc):
     # predict index
     index = np.argsort(score)  # from small to large
     g_num = 100
-    unlabled_node = (gf[index[:g_num]] - query).pow(2)
-    index_new_100 = label_propogate(unlabled_node)
-    index[:g_num] = index[:g_num][index_new_100]
-    # #or
-    # index_new_100 = random_walk(qf.unsqueeze(0), gf[index[:g_num]].unsqueeze(0))
-    # index[:g_num] = index[:g_num][index_new_100]
-    # #or
-    # index_new_100 = random_walk_guider(qf, gf[index[:g_num]])
-    # index[:g_num] = index[:g_num][index_new_100]
+    # #baseline:0  gcn:1  random_walk:2  guider:3
+    mode = 2
+    if mode == 1:
+        unlabled_node = (gf[index[:g_num]] - query).pow(2)
+        index_new_100 = label_propogate(unlabled_node)
+        index[:g_num] = index[:g_num][index_new_100]
+    elif mode == 2:
+        index_new_100 = random_walk(qf.unsqueeze(0), gf[index[:g_num]].unsqueeze(0))
+        index[:g_num] = index[:g_num][index_new_100]
+    elif mode == 3:
+        index_new_100 = random_walk_guider(qf, gf[index[:g_num]])
+        index[:g_num] = index[:g_num][index_new_100]
 
     # good index
     query_index = np.argwhere(gl == ql)
@@ -131,7 +134,7 @@ def compute_mAP(index, qc, good_index, junk_index):
 
 
 ######################################################################
-result = scipy.io.loadmat('pytorch_result_duke.mat')
+result = scipy.io.loadmat('pytorch_result.mat')
 query_feature = torch.FloatTensor(result['query_f'])
 query_cam = result['query_cam'][0]
 query_label = result['query_label'][0]

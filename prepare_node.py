@@ -41,7 +41,7 @@ def get_original_node():
     image_datasets = datasets.ImageFolder(data_dir)
     cams, labels = get_id(image_datasets.imgs)
 
-    result = scipy.io.loadmat('pytorch_result_market.mat')
+    result = scipy.io.loadmat('pytorch_result.mat')
     query_feature = torch.FloatTensor(result['query_f'])
     query_cam = result['query_cam'][0]
     query_label = result['query_label'][0]

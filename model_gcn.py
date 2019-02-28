@@ -168,15 +168,16 @@ def random_walk_guider(qf, gf=None):
     m = loadmat('nodes_info.mat')
     node_same = m['feature_same']
     node_dif = m['feature_dif']
-    node_guider = np.concatenate((node_same, node_dif), 0)
-    node_guider = torch.from_numpy(node_same).cuda()
+    node_neg_guider = torch.from_numpy(node_dif).cuda()
+    node_pos_guider = torch.from_numpy(node_same).cuda()
     if gf is not None:
         feature = (qf - gf).pow(2)
     else:
         feature = qf.pow(2)
     dist = torch.Tensor(len(feature)).zero_().cuda()
     for i in np.arange(len(feature)):
-        dist[i] = (feature[i] - node_guider).pow(2).sum(-1).mean()
+        dist[i] = (feature[i] - node_pos_guider).pow(2).sum(-1).mean()
+        dist[i] -= (feature[i] - node_neg_guider).pow(2).sum(-1).mean()
     _, index = torch.sort(dist, descending=False)
     return index
 
