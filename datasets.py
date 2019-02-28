@@ -98,6 +98,13 @@ class SiameseDataset(datasets.ImageFolder):
         if self.transform is not None:
             img1 = self.transform(img1)
             img2 = self.transform(img2)
+        # #need to refine
+        # #for self supervision by shuffle in one image
+        shuffle_flag = np.random.randint(0, 3)
+        if siamese_target == 1 and shuffle_flag == 1:
+            img2 = torch.cat((img2[:, int(img2.size(1) / 2):], img2[:, :int(img2.size(1) / 2)]), 1)
+            siamese_target = 0
+
         return (img1, img2), siamese_target, (int(label1), int(label2))
 
     def __len__(self):
