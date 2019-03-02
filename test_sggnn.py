@@ -94,8 +94,8 @@ if opt.PCB:
     ])
 
 data_dir = test_dir
-dataset_list = ['gallery', 'query', 'train_all']
-# dataset_list = ['gallery', 'query']
+# dataset_list = ['gallery', 'query', 'train_all']
+dataset_list = ['gallery', 'query']
 image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x), data_transforms) for x in dataset_list}
 dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=opt.batchsize,
                                               shuffle=False, num_workers=16) for x in dataset_list}
@@ -185,7 +185,7 @@ for i in range(len(dataset_list)):
 ######################################################################
 # Load Collected data Trained model
 print('-------test-----------')
-embedding_net = ft_net_dense(751)
+embedding_net = ft_net_dense(1072)
 # embedding_net = ft_net_dense(702)
 model_siamese = SiameseNet(embedding_net)
 model_siamese = load_network_easy(model_siamese, name, opt.which_epoch)

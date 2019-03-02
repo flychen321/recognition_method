@@ -39,6 +39,7 @@ version = torch.__version__
 parser = argparse.ArgumentParser(description='Training')
 parser.add_argument('--gpu_ids', default='0', type=str, help='gpu_ids: e.g. 0  0,1,2  0,2')
 parser.add_argument('--name', default='ft_ResNet50', type=str, help='output model name')
+parser.add_argument('--save_model_name', default='', type=str, help='save_model_name')
 parser.add_argument('--data_dir', default='data/market/pytorch', type=str, help='training dir path')
 parser.add_argument('--train_all', action='store_true', help='use all training data')
 parser.add_argument('--color_jitter', action='store_true', help='use color jitter in training')
@@ -53,6 +54,7 @@ parser.add_argument('--net_loss_model', default=0, type=int, help='net_loss_mode
 opt = parser.parse_args()
 print('opt = %s' % opt)
 print('net_loss_model = %d' % opt.net_loss_model)
+print('save_model_name = %s' % opt.save_model_name)
 data_dir = opt.data_dir
 # name = opt.name
 name = 'sggnn'
@@ -365,7 +367,7 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
                 loss_id2 = criterion(outputs2, id_labels[1])
                 loss_id = loss_id1 + loss_id2
                 loss_verif = criterion(score, vf_labels)
-                # opt.net_loss_model = 0
+                opt.net_loss_model = 0
                 if opt.net_loss_model == 0:
                     loss = loss_id + loss_verif
                 elif opt.net_loss_model == 1:
@@ -426,12 +428,12 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
     # load best model weights
     model.load_state_dict(best_model_wts)
     save_network(model, name, 'best_siamese')
-    save_network(model, name, 'best_siamese_' + str(opt.net_loss_model))
+    save_network(model, name, 'best_siamese_' + str(opt.save_model_name))
     save_whole_network(model, name, 'whole_best_siamese')
     # load last model weights
     model.load_state_dict(last_model_wts)
     save_network(model, name, 'last_siamese')
-    save_network(model, name, 'last_siamese_' + str(opt.net_loss_model))
+    save_network(model, name, 'last_siamese_' + str(opt.save_model_name))
     save_whole_network(model, name, 'whole_last_siamese')
     return model
 
@@ -565,9 +567,9 @@ if stage_1:
     ], weight_decay=5e-4, momentum=0.9, nesterov=True)
 
     # exp_lr_scheduler = lr_scheduler.MultiStepLR(optimizer_ft, milestones=[40, 60], gamma=0.1)
-    exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=40, gamma=0.1)
+    exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=30, gamma=0.1)
     model = train_model_siamese(model_siamese, criterion, optimizer_ft, exp_lr_scheduler,
-                                num_epochs=130)
+                                num_epochs=100)
 
 if stage_2:
     margin = 1.

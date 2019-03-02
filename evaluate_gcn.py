@@ -15,8 +15,8 @@ from torch.optim import lr_scheduler
 #######################################################################
 # Evaluate
 
-# cam_metric = torch.zeros(6, 6)
-cam_metric = torch.zeros(8, 8)
+cam_metric = torch.zeros(6, 6)
+# cam_metric = torch.zeros(8, 8)
 
 use_gpu = torch.cuda.is_available()
 
@@ -161,8 +161,8 @@ right_cnt = 0
 former_right_cnt = 0
 former_i = 0
 # print(query_label)
-# for i in range(len(query_label)):
-for i in range(100):
+for i in range(len(query_label)):
+# for i in range(100):
     ap_tmp, CMC_tmp = evaluate(query_feature[i], query_label[i], query_cam[i], gallery_feature, gallery_label,
                                gallery_cam)
     if CMC_tmp[0] == -1:
@@ -180,10 +180,10 @@ for i in range(100):
         former_i = i
 
 CMC = CMC.float()
-# CMC = CMC / len(query_label)  # average CMC
-CMC = CMC / 100  # average CMC
-# print('Rank@1:%f Rank@5:%f Rank@10:%f mAP:%f' % (CMC[0], CMC[4], CMC[9], ap / len(query_label)))
-print('Rank@1:%f Rank@5:%f Rank@10:%f mAP:%f' % (CMC[0], CMC[4], CMC[9], ap / 100))
+CMC = CMC / len(query_label)  # average CMC
+# CMC = CMC / 100  # average CMC
+print('Rank@1:%f Rank@5:%f Rank@10:%f mAP:%f' % (CMC[0], CMC[4], CMC[9], ap / len(query_label)))
+# print('Rank@1:%f Rank@5:%f Rank@10:%f mAP:%f' % (CMC[0], CMC[4], CMC[9], ap / 100))
 
 # multiple-query
 CMC = torch.IntTensor(len(gallery_label)).zero_()
