@@ -382,8 +382,7 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
                 #     print('opt.net_loss_model = %s    error !!!' % opt.net_loss_model)
                 #     exit()
 
-                outputs1, f1, f1_flip, outputs2, f2, f2_flip, \
-                result, result_combine_1, result_combine_2 = model(inputs[0], inputs[1])
+                outputs1, outputs2, result, result_combine_1, result_combine_2 = model(inputs[0], inputs[1])
                 _, id_preds1 = torch.max(outputs1.detach(), 1)
                 _, id_preds2 = torch.max(outputs2.detach(), 1)
                 _, vf_preds = torch.max(result.detach(), 1)
@@ -396,22 +395,13 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
                 loss_verif1 = criterion(result_combine_1, vf_labels)
                 loss_verif2 = criterion(result_combine_2, vf_labels)
                 loss_verif = loss_verif0 + loss_verif1 + loss_verif2
-                loss_space1 = mse_criterion(f1, f1_flip)
-                loss_space2 = mse_criterion(f2, f2_flip)
-                loss_space = loss_space1 + loss_space2
                 if opt.net_loss_model == 0:
                     r1 = 0.5
                     r2 = 0.5
-                    r3 = 0.0
                 elif opt.net_loss_model == 1:
-                    r1 = 0.4
-                    r2 = 0.4
-                    r3 = 0.2
-                else:
-                    r1 = 0.2
-                    r2 = 0.6
-                    r3 = 0.2
-                loss = r1 * loss_id + r2 * loss_verif + r3 * loss_space
+                    r1 = 1.0
+                    r2 = 0
+                loss = loss_id + loss_verif0
 
                 # backward + optimize only if in training phase
                 if phase == 'train':
@@ -420,7 +410,6 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
                 # statistics
                 running_id_loss += loss_id.item()  # * opt.batchsize
                 running_verif_loss += loss_verif.item()  # * opt.batchsize
-                running_space_loss += loss_space.item()  # * opt.batchsize
 
                 running_id_corrects += float(torch.sum(id_preds1 == id_labels[0].detach()))
                 running_id_corrects += float(torch.sum(id_preds2 == id_labels[1].detach()))
@@ -584,6 +573,7 @@ stage_2 = False
 stage_3 = False
 
 if stage_1:
+    print('class_num = %d' % len(class_names))
     embedding_net = ft_net_dense(len(class_names))
     model_siamese = SiameseNet(embedding_net)
     if use_gpu:

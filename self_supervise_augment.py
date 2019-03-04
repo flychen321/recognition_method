@@ -9,7 +9,7 @@ import math
 import cv2
 import torch
 # image size: 128 * 64 *3
-path = 'data/market/pytorch/train_all_original'
+path = 'data/market/pytorch/train_all'
 dst_path = 'data/market/bounding_box_train'
 # path = 'data/market/pytorch/part'
 dirs = os.listdir(path)
@@ -35,14 +35,18 @@ for i in range(int(len(dirs) / 2)):
         for j in range(num):
             img1 = cv2.imread(os.path.join(path, dirs[i], files1[index1[j]]))
             img2 = cv2.imread(os.path.join(path, dirs[len(dirs) - 1 - i], files2[index2[j]]))
-            img_new = np.concatenate((img1[:int(img1.shape[0] / 2), :, ], img2[int(img2.shape[0] / 2):, :, :]), 0)
-            file_name = dirs[i] + dirs[len(dirs) - 1 - i] + '_' + str(j) + '_c' + files1[j].split('c')[1]
-            cv2.imwrite(os.path.join(dst_path, file_name), img_new)
+            img_new1 = np.concatenate((img1[:int(img1.shape[0] / 2), :, ], img2[int(img2.shape[0] / 2):, :, :]), 0)
+            img_new2 = np.concatenate((img2[:int(img2.shape[0] / 2), :, ], img1[int(img1.shape[0] / 2):, :, :]), 0)
+            file_name1 = dirs[i] + dirs[len(dirs) - 1 - i] + '_' + str(j) + '_c' + files1[j].split('c')[1]
+            file_name2 = dirs[len(dirs) - 1 - i] + dirs[i] + '_' + str(j) + '_c' + files2[j].split('c')[1]
+            cv2.imwrite(os.path.join(dst_path, file_name1), img_new1)
+            # cv2.imwrite(os.path.join(dst_path, file_name2), img_new2)
             # print(file_name)
             # exit()
             # cv2.imshow('org1', img1)
             # cv2.imshow('org2', img2)
-            # cv2.imshow('new', img_new)
-            # cv2.waitKey(1000)
+            # cv2.imshow('new1', img_new1)
+            # cv2.imshow('new2', img_new2)
+            # cv2.waitKey(5000)
 print('new_dir_num = %d  new_file_num = %d' % (new_dir_num, new_file_num))
 print(len(dirs))

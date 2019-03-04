@@ -186,6 +186,7 @@ for i in range(len(dataset_list)):
 # Load Collected data Trained model
 print('-------test-----------')
 embedding_net = ft_net_dense(751)
+# embedding_net = ft_net_dense(1393)
 # embedding_net = ft_net_dense(702)
 model_siamese = SiameseNet(embedding_net)
 model_siamese = load_network_easy(model_siamese, name, opt.which_epoch)
