@@ -46,7 +46,7 @@ parser.add_argument('--color_jitter', action='store_true', help='use color jitte
 parser.add_argument('--batchsize', default=48, type=int, help='batchsize')
 parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
 parser.add_argument('--alpha', default=1.0, type=float, help='alpha')
-parser.add_argument('--erasing_p', default=0, type=float, help='Random Erasing probability, in [0,1]')
+parser.add_argument('--erasing_p', default=0.5, type=float, help='Random Erasing probability, in [0,1]')
 parser.add_argument('--use_dense', action='store_true', help='use densenet121')
 parser.add_argument('--PCB', action='store_true', help='use PCB+ResNet50')
 parser.add_argument('--net_loss_model', default=0, type=int, help='net_loss_model')
@@ -320,7 +320,7 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
     best_acc = 0.0
     best_loss = 10000.0
     best_epoch = -1
-
+    mse_criterion = nn.MSELoss()
     for epoch in range(num_epochs):
         print('Epoch {}/{}'.format(epoch, num_epochs - 1))
         print('-' * 10)
@@ -335,8 +335,11 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
 
             running_id_loss = 0.0
             running_verif_loss = 0.0
+            running_space_loss = 0.0
             running_id_corrects = 0.0
             running_verif_corrects = 0.0
+            running_verif_corrects1 = 0.0
+            running_verif_corrects2 = 0.0
             # Iterate over data.
             for data in dataloaders[phase]:
                 # get the inputs
@@ -359,48 +362,86 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
                 optimizer.zero_grad()
 
                 # forward
-                outputs1, f1, outputs2, f2, feature, score = model(inputs[0], inputs[1])
+                # outputs1, f1, outputs2, f2, feature, score = model(inputs[0], inputs[1])
+                # _, id_preds1 = torch.max(outputs1.detach(), 1)
+                # _, id_preds2 = torch.max(outputs2.detach(), 1)
+                # _, vf_preds = torch.max(score.detach(), 1)
+                # loss_id1 = criterion(outputs1, id_labels[0])
+                # loss_id2 = criterion(outputs2, id_labels[1])
+                # loss_id = loss_id1 + loss_id2
+                # loss_verif = criterion(score, vf_labels)
+
+                # opt.net_loss_model = 0
+                # if opt.net_loss_model == 0:
+                #     loss = loss_id + loss_verif
+                # elif opt.net_loss_model == 1:
+                #     loss = loss_verif
+                # elif opt.net_loss_model == 2:
+                #     loss = loss_id
+                # else:
+                #     print('opt.net_loss_model = %s    error !!!' % opt.net_loss_model)
+                #     exit()
+
+                outputs1, f1, f1_flip, outputs2, f2, f2_flip, \
+                result, result_combine_1, result_combine_2 = model(inputs[0], inputs[1])
                 _, id_preds1 = torch.max(outputs1.detach(), 1)
                 _, id_preds2 = torch.max(outputs2.detach(), 1)
-                _, vf_preds = torch.max(score.detach(), 1)
+                _, vf_preds = torch.max(result.detach(), 1)
+                _, vf_combine_1_preds = torch.max(result_combine_1.detach(), 1)
+                _, vf_combine_2_preds = torch.max(result_combine_2.detach(), 1)
                 loss_id1 = criterion(outputs1, id_labels[0])
                 loss_id2 = criterion(outputs2, id_labels[1])
                 loss_id = loss_id1 + loss_id2
-                loss_verif = criterion(score, vf_labels)
-                # opt.net_loss_model = 0
+                loss_verif0 = criterion(result, vf_labels)
+                loss_verif1 = criterion(result_combine_1, vf_labels)
+                loss_verif2 = criterion(result_combine_2, vf_labels)
+                loss_verif = loss_verif0 + loss_verif1 + loss_verif2
+                loss_space1 = mse_criterion(f1, f1_flip)
+                loss_space2 = mse_criterion(f2, f2_flip)
+                loss_space = loss_space1 + loss_space2
                 if opt.net_loss_model == 0:
-                    loss = loss_id + loss_verif
+                    r1 = 0.5
+                    r2 = 0.5
+                    r3 = 0.0
                 elif opt.net_loss_model == 1:
-                    loss = loss_verif
-                elif opt.net_loss_model == 2:
-                    loss = loss_id
+                    r1 = 0.4
+                    r2 = 0.4
+                    r3 = 0.2
                 else:
-                    print('opt.net_loss_model = %s    error !!!' % opt.net_loss_model)
-                    exit()
+                    r1 = 0.2
+                    r2 = 0.6
+                    r3 = 0.2
+                loss = r1 * loss_id + r2 * loss_verif + r3 * loss_space
 
                 # backward + optimize only if in training phase
                 if phase == 'train':
                     loss.backward()
                     optimizer.step()
                 # statistics
-                if int(version[0]) > 0 or int(version[2]) > 3:  # for the new version like 0.4.0 and 0.5.0
-                    running_id_loss += loss.item()  # * opt.batchsize
-                    running_verif_loss += loss_verif.item()  # * opt.batchsize
-                else:  # for the old version like 0.3.0 and 0.3.1
-                    running_id_loss += loss.item()
-                    running_verif_loss += loss_verif.item()
+                running_id_loss += loss_id.item()  # * opt.batchsize
+                running_verif_loss += loss_verif.item()  # * opt.batchsize
+                running_space_loss += loss_space.item()  # * opt.batchsize
+
                 running_id_corrects += float(torch.sum(id_preds1 == id_labels[0].detach()))
                 running_id_corrects += float(torch.sum(id_preds2 == id_labels[1].detach()))
                 running_verif_corrects += float(torch.sum(vf_preds == vf_labels))
+                running_verif_corrects1 += float(torch.sum(vf_combine_1_preds == vf_labels))
+                running_verif_corrects2 += float(torch.sum(vf_combine_2_preds == vf_labels))
 
             datasize = dataset_sizes['train'] // opt.batchsize * opt.batchsize
             epoch_id_loss = running_id_loss / datasize
             epoch_verif_loss = running_verif_loss / datasize
+            epoch_space_loss = running_space_loss / datasize
             epoch_id_acc = running_id_corrects / (datasize * 2)
+            # epoch_verif_acc = running_verif_corrects / (datasize * 3)
             epoch_verif_acc = running_verif_corrects / datasize
+            epoch_verif_acc1 = running_verif_corrects1 / datasize
+            epoch_verif_acc2 = running_verif_corrects2 / datasize
 
-            print('{} Loss_id: {:.4f} Loss_verif: {:.4f}  Acc_id: {:.4f} Verif_Acc: {:.4f} '.format(
-                phase, epoch_id_loss, epoch_verif_loss, epoch_id_acc, epoch_verif_acc))
+            print('{} Loss_id: {:.4f} Loss_verify: {:.4f} Loss_space: {:.4f}  Acc_id: {:.4f} Acc_verify: {:.4f} '
+                  'Acc_verify1: {:.4f} Acc_verify2: {:.4f} '.format(
+                phase, epoch_id_loss, epoch_verif_loss, epoch_space_loss, epoch_id_acc, epoch_verif_acc,
+                epoch_verif_acc1, epoch_verif_acc2))
 
             epoch_acc = (epoch_id_acc + epoch_verif_acc) / 2.0
             epoch_loss = (epoch_id_loss + epoch_verif_loss) / 2.0
@@ -567,7 +608,7 @@ if stage_1:
     ], weight_decay=5e-4, momentum=0.9, nesterov=True)
 
     # exp_lr_scheduler = lr_scheduler.MultiStepLR(optimizer_ft, milestones=[40, 60], gamma=0.1)
-    exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=30, gamma=0.1)
+    exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=15, gamma=0.32)
     model = train_model_siamese(model_siamese, criterion, optimizer_ft, exp_lr_scheduler,
                                 num_epochs=100)
 

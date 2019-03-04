@@ -9,6 +9,8 @@ import os
 import math
 import cv2
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
 #
 # a = np.array([1,4,5,2,9,7])
 # b = a.sort()
@@ -32,32 +34,13 @@ import torch
 # Rank@1:0.070000 Rank@5:0.270000 Rank@10:0.410000 mAP:0.044516
 # Rank@1:0.220000 Rank@5:0.360000 Rank@10:0.440000 mAP:0.109732
 # Rank@1:0.310000 Rank@5:0.440000 Rank@10:0.500000 mAP:0.143855
-
-path = 'data/market/pytorch/shuffle_test'
-# files = os.listdir(path)
-# for file in files:
-#     img = cv2.imread(os.path.join(path, file))
-#     cv2.imshow('org', img)
-#     cv2.waitKey(1000)
-#     img = np.array(img)
-#     # np.random.shuffle(img)
-#     # img = np.transpose(img, (1, 0, 2))
-#     # np.random.shuffle(img)
-#     # img = np.transpose(img, (1, 0, 2))
-#     # index = np.random.permutation(3)
-#     # print(index)
-#     # print((index == np.arange(3)).all())
-#     # img = np.transpose(img, (2, 1, 0))
-#     # np.random.shuffle(img)
-#     # img = np.transpose(img, (2, 1, 0))
-#     img = (img*0.5).astype(np.uint8)
-#     b = img
-#     # b = np.concatenate((img[:, int(img.shape[1]/2):, :], img[:, :int(img.shape[1]/2), :]), 1)
-#     print(b.shape)
-#     cv2.imshow('new', b)
-#     cv2.waitKey(5000)
-
-a = np.random.permutation(10)
-print(a)
-print('0002_c1s1_000451_03.jpg')
-print('0002_c1s1_000451_03.jpg'.split('c'))
+a = []
+input = torch.randn(48, 512)
+for i in range(128):
+    a.append(input[0][i*4: i*4+4].mean())
+print(input.shape)
+output = F.adaptive_avg_pool1d(input.unsqueeze(0), 128).squeeze(0)
+# output = F.avg_pool1d(input.unsqueeze(0), 4)
+# print(output.shape)
+# output = output.squeeze(0)
+print(output.shape)

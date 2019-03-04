@@ -1,0 +1,412 @@
+opt = Namespace(PCB=False, alpha=1.0, batchsize=24, color_jitter=False, data_dir='data/market/pytorch', erasing_p=0.5, gpu_ids='0', lr=0.1, name='sggnn', net_loss_model=1, save_model_name='1', train_all=True, use_dense=True)
+net_loss_model = 1
+save_model_name = 1
+[Resize(size=(256, 128), interpolation=PIL.Image.BICUBIC), Pad(padding=10, fill=0, padding_mode=constant), RandomCrop(size=(256, 128), padding=0), RandomHorizontalFlip(p=0.5), ToTensor(), Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]), <random_erasing.RandomErasing object at 0x7f1a0916f240>]
+4.76837158203125e-07
+model_siamese structure
+Epoch 0/99
+----------
+train Loss_id: 0.5448 Loss_verify: 0.0841 Loss_space: 0.0420  Acc_id: 0.0121 Acc_verify: 0.5737 
+Epoch 1/99
+----------
+train Loss_id: 0.4567 Loss_verify: 0.0743 Loss_space: 0.0059  Acc_id: 0.0324 Acc_verify: 0.6948 
+Epoch 2/99
+----------
+train Loss_id: 0.3925 Loss_verify: 0.0671 Loss_space: 0.0087  Acc_id: 0.0740 Acc_verify: 0.7520 
+Epoch 3/99
+----------
+train Loss_id: 0.3212 Loss_verify: 0.0647 Loss_space: 0.0121  Acc_id: 0.1674 Acc_verify: 0.7684 
+Epoch 4/99
+----------
+train Loss_id: 0.2539 Loss_verify: 0.0627 Loss_space: 0.0161  Acc_id: 0.2869 Acc_verify: 0.7854 
+Epoch 5/99
+----------
+train Loss_id: 0.1966 Loss_verify: 0.0621 Loss_space: 0.0188  Acc_id: 0.4196 Acc_verify: 0.7917 
+Epoch 6/99
+----------
+train Loss_id: 0.1541 Loss_verify: 0.0609 Loss_space: 0.0195  Acc_id: 0.5286 Acc_verify: 0.8040 
+Epoch 7/99
+----------
+train Loss_id: 0.1258 Loss_verify: 0.0600 Loss_space: 0.0194  Acc_id: 0.6088 Acc_verify: 0.8115 
+Epoch 8/99
+----------
+train Loss_id: 0.1040 Loss_verify: 0.0590 Loss_space: 0.0188  Acc_id: 0.6697 Acc_verify: 0.8210 
+Epoch 9/99
+----------
+train Loss_id: 0.0906 Loss_verify: 0.0588 Loss_space: 0.0186  Acc_id: 0.7093 Acc_verify: 0.8243 
+Epoch 10/99
+----------
+train Loss_id: 0.0787 Loss_verify: 0.0584 Loss_space: 0.0177  Acc_id: 0.7450 Acc_verify: 0.8267 
+Epoch 11/99
+----------
+train Loss_id: 0.0698 Loss_verify: 0.0585 Loss_space: 0.0172  Acc_id: 0.7738 Acc_verify: 0.8296 
+Epoch 12/99
+----------
+train Loss_id: 0.0658 Loss_verify: 0.0579 Loss_space: 0.0169  Acc_id: 0.7862 Acc_verify: 0.8310 
+Epoch 13/99
+----------
+train Loss_id: 0.0592 Loss_verify: 0.0580 Loss_space: 0.0165  Acc_id: 0.8069 Acc_verify: 0.8295 
+Epoch 14/99
+----------
+train Loss_id: 0.0541 Loss_verify: 0.0574 Loss_space: 0.0157  Acc_id: 0.8258 Acc_verify: 0.8359 
+Epoch 15/99
+----------
+train Loss_id: 0.0279 Loss_verify: 0.0557 Loss_space: 0.0079  Acc_id: 0.9159 Acc_verify: 0.8518 
+Epoch 16/99
+----------
+train Loss_id: 0.0217 Loss_verify: 0.0539 Loss_space: 0.0066  Acc_id: 0.9381 Acc_verify: 0.8572 
+Epoch 17/99
+----------
+train Loss_id: 0.0199 Loss_verify: 0.0530 Loss_space: 0.0062  Acc_id: 0.9467 Acc_verify: 0.8587 
+Epoch 18/99
+----------
+train Loss_id: 0.0186 Loss_verify: 0.0523 Loss_space: 0.0061  Acc_id: 0.9490 Acc_verify: 0.8611 
+Epoch 19/99
+----------
+train Loss_id: 0.0177 Loss_verify: 0.0518 Loss_space: 0.0060  Acc_id: 0.9520 Acc_verify: 0.8612 
+Epoch 20/99
+----------
+train Loss_id: 0.0176 Loss_verify: 0.0516 Loss_space: 0.0060  Acc_id: 0.9541 Acc_verify: 0.8626 
+Epoch 21/99
+----------
+train Loss_id: 0.0161 Loss_verify: 0.0508 Loss_space: 0.0058  Acc_id: 0.9607 Acc_verify: 0.8659 
+Epoch 22/99
+----------
+train Loss_id: 0.0163 Loss_verify: 0.0503 Loss_space: 0.0058  Acc_id: 0.9583 Acc_verify: 0.8678 
+Epoch 23/99
+----------
+train Loss_id: 0.0159 Loss_verify: 0.0498 Loss_space: 0.0058  Acc_id: 0.9618 Acc_verify: 0.8703 
+Epoch 24/99
+----------
+train Loss_id: 0.0159 Loss_verify: 0.0500 Loss_space: 0.0059  Acc_id: 0.9627 Acc_verify: 0.8681 
+Epoch 25/99
+----------
+train Loss_id: 0.0157 Loss_verify: 0.0496 Loss_space: 0.0059  Acc_id: 0.9639 Acc_verify: 0.8703 
+Epoch 26/99
+----------
+train Loss_id: 0.0157 Loss_verify: 0.0494 Loss_space: 0.0060  Acc_id: 0.9631 Acc_verify: 0.8698 
+Epoch 27/99
+----------
+train Loss_id: 0.0155 Loss_verify: 0.0489 Loss_space: 0.0059  Acc_id: 0.9654 Acc_verify: 0.8738 
+Epoch 28/99
+----------
+train Loss_id: 0.0153 Loss_verify: 0.0491 Loss_space: 0.0059  Acc_id: 0.9656 Acc_verify: 0.8686 
+Epoch 29/99
+----------
+train Loss_id: 0.0146 Loss_verify: 0.0491 Loss_space: 0.0057  Acc_id: 0.9672 Acc_verify: 0.8709 
+Epoch 30/99
+----------
+train Loss_id: 0.0112 Loss_verify: 0.0484 Loss_space: 0.0042  Acc_id: 0.9788 Acc_verify: 0.8765 
+Epoch 31/99
+----------
+train Loss_id: 0.0105 Loss_verify: 0.0480 Loss_space: 0.0039  Acc_id: 0.9799 Acc_verify: 0.8777 
+Epoch 32/99
+----------
+train Loss_id: 0.0104 Loss_verify: 0.0479 Loss_space: 0.0040  Acc_id: 0.9806 Acc_verify: 0.8778 
+Epoch 33/99
+----------
+train Loss_id: 0.0101 Loss_verify: 0.0475 Loss_space: 0.0040  Acc_id: 0.9824 Acc_verify: 0.8790 
+Epoch 34/99
+----------
+train Loss_id: 0.0096 Loss_verify: 0.0470 Loss_space: 0.0039  Acc_id: 0.9846 Acc_verify: 0.8800 
+Epoch 35/99
+----------
+train Loss_id: 0.0101 Loss_verify: 0.0468 Loss_space: 0.0039  Acc_id: 0.9826 Acc_verify: 0.8814 
+Epoch 36/99
+----------
+train Loss_id: 0.0098 Loss_verify: 0.0469 Loss_space: 0.0039  Acc_id: 0.9843 Acc_verify: 0.8814 
+Epoch 37/99
+----------
+train Loss_id: 0.0095 Loss_verify: 0.0467 Loss_space: 0.0039  Acc_id: 0.9860 Acc_verify: 0.8833 
+Epoch 38/99
+----------
+train Loss_id: 0.0099 Loss_verify: 0.0468 Loss_space: 0.0039  Acc_id: 0.9843 Acc_verify: 0.8809 
+Epoch 39/99
+----------
+train Loss_id: 0.0098 Loss_verify: 0.0463 Loss_space: 0.0038  Acc_id: 0.9848 Acc_verify: 0.8823 
+Epoch 40/99
+----------
+train Loss_id: 0.0096 Loss_verify: 0.0463 Loss_space: 0.0038  Acc_id: 0.9851 Acc_verify: 0.8823 
+Epoch 41/99
+----------
+train Loss_id: 0.0094 Loss_verify: 0.0462 Loss_space: 0.0038  Acc_id: 0.9875 Acc_verify: 0.8827 
+Epoch 42/99
+----------
+train Loss_id: 0.0095 Loss_verify: 0.0464 Loss_space: 0.0038  Acc_id: 0.9861 Acc_verify: 0.8796 
+Epoch 43/99
+----------
+train Loss_id: 0.0097 Loss_verify: 0.0461 Loss_space: 0.0038  Acc_id: 0.9859 Acc_verify: 0.8824 
+Epoch 44/99
+----------
+train Loss_id: 0.0095 Loss_verify: 0.0459 Loss_space: 0.0039  Acc_id: 0.9868 Acc_verify: 0.8836 
+Epoch 45/99
+----------
+train Loss_id: 0.0086 Loss_verify: 0.0454 Loss_space: 0.0034  Acc_id: 0.9888 Acc_verify: 0.8877 
+Epoch 46/99
+----------
+train Loss_id: 0.0087 Loss_verify: 0.0458 Loss_space: 0.0033  Acc_id: 0.9886 Acc_verify: 0.8832 
+Epoch 47/99
+----------
+train Loss_id: 0.0085 Loss_verify: 0.0454 Loss_space: 0.0033  Acc_id: 0.9886 Acc_verify: 0.8852 
+Epoch 48/99
+----------
+train Loss_id: 0.0081 Loss_verify: 0.0457 Loss_space: 0.0033  Acc_id: 0.9905 Acc_verify: 0.8836 
+Epoch 49/99
+----------
+train Loss_id: 0.0083 Loss_verify: 0.0454 Loss_space: 0.0033  Acc_id: 0.9889 Acc_verify: 0.8863 
+Epoch 50/99
+----------
+train Loss_id: 0.0082 Loss_verify: 0.0454 Loss_space: 0.0033  Acc_id: 0.9898 Acc_verify: 0.8840 
+Epoch 51/99
+----------
+train Loss_id: 0.0083 Loss_verify: 0.0453 Loss_space: 0.0033  Acc_id: 0.9886 Acc_verify: 0.8855 
+Epoch 52/99
+----------
+train Loss_id: 0.0083 Loss_verify: 0.0450 Loss_space: 0.0032  Acc_id: 0.9890 Acc_verify: 0.8881 
+Epoch 53/99
+----------
+train Loss_id: 0.0082 Loss_verify: 0.0449 Loss_space: 0.0032  Acc_id: 0.9899 Acc_verify: 0.8897 
+Epoch 54/99
+----------
+train Loss_id: 0.0082 Loss_verify: 0.0451 Loss_space: 0.0032  Acc_id: 0.9904 Acc_verify: 0.8871 
+Epoch 55/99
+----------
+train Loss_id: 0.0083 Loss_verify: 0.0448 Loss_space: 0.0032  Acc_id: 0.9902 Acc_verify: 0.8880 
+Epoch 56/99
+----------
+train Loss_id: 0.0083 Loss_verify: 0.0449 Loss_space: 0.0032  Acc_id: 0.9900 Acc_verify: 0.8873 
+Epoch 57/99
+----------
+train Loss_id: 0.0083 Loss_verify: 0.0450 Loss_space: 0.0033  Acc_id: 0.9900 Acc_verify: 0.8865 
+Epoch 58/99
+----------
+train Loss_id: 0.0084 Loss_verify: 0.0452 Loss_space: 0.0033  Acc_id: 0.9895 Acc_verify: 0.8857 
+Epoch 59/99
+----------
+train Loss_id: 0.0082 Loss_verify: 0.0452 Loss_space: 0.0033  Acc_id: 0.9900 Acc_verify: 0.8872 
+Epoch 60/99
+----------
+train Loss_id: 0.0079 Loss_verify: 0.0446 Loss_space: 0.0031  Acc_id: 0.9904 Acc_verify: 0.8925 
+Epoch 61/99
+----------
+train Loss_id: 0.0080 Loss_verify: 0.0449 Loss_space: 0.0031  Acc_id: 0.9907 Acc_verify: 0.8859 
+Epoch 62/99
+----------
+train Loss_id: 0.0079 Loss_verify: 0.0448 Loss_space: 0.0031  Acc_id: 0.9908 Acc_verify: 0.8889 
+Epoch 63/99
+----------
+train Loss_id: 0.0078 Loss_verify: 0.0447 Loss_space: 0.0030  Acc_id: 0.9902 Acc_verify: 0.8877 
+Epoch 64/99
+----------
+train Loss_id: 0.0077 Loss_verify: 0.0448 Loss_space: 0.0030  Acc_id: 0.9907 Acc_verify: 0.8894 
+Epoch 65/99
+----------
+train Loss_id: 0.0079 Loss_verify: 0.0446 Loss_space: 0.0030  Acc_id: 0.9912 Acc_verify: 0.8878 
+Epoch 66/99
+----------
+train Loss_id: 0.0078 Loss_verify: 0.0446 Loss_space: 0.0031  Acc_id: 0.9921 Acc_verify: 0.8886 
+Epoch 67/99
+----------
+train Loss_id: 0.0078 Loss_verify: 0.0444 Loss_space: 0.0031  Acc_id: 0.9906 Acc_verify: 0.8885 
+Epoch 68/99
+----------
+train Loss_id: 0.0077 Loss_verify: 0.0446 Loss_space: 0.0031  Acc_id: 0.9911 Acc_verify: 0.8878 
+Epoch 69/99
+----------
+train Loss_id: 0.0077 Loss_verify: 0.0443 Loss_space: 0.0031  Acc_id: 0.9910 Acc_verify: 0.8924 
+Epoch 70/99
+----------
+train Loss_id: 0.0077 Loss_verify: 0.0446 Loss_space: 0.0030  Acc_id: 0.9916 Acc_verify: 0.8875 
+Epoch 71/99
+----------
+train Loss_id: 0.0078 Loss_verify: 0.0443 Loss_space: 0.0030  Acc_id: 0.9911 Acc_verify: 0.8903 
+Epoch 72/99
+----------
+train Loss_id: 0.0078 Loss_verify: 0.0441 Loss_space: 0.0030  Acc_id: 0.9906 Acc_verify: 0.8939 
+Epoch 73/99
+----------
+train Loss_id: 0.0077 Loss_verify: 0.0448 Loss_space: 0.0030  Acc_id: 0.9909 Acc_verify: 0.8878 
+Epoch 74/99
+----------
+train Loss_id: 0.0079 Loss_verify: 0.0447 Loss_space: 0.0030  Acc_id: 0.9911 Acc_verify: 0.8880 
+Epoch 75/99
+----------
+train Loss_id: 0.0078 Loss_verify: 0.0443 Loss_space: 0.0030  Acc_id: 0.9905 Acc_verify: 0.8917 
+Epoch 76/99
+----------
+train Loss_id: 0.0076 Loss_verify: 0.0445 Loss_space: 0.0030  Acc_id: 0.9915 Acc_verify: 0.8904 
+Epoch 77/99
+----------
+train Loss_id: 0.0077 Loss_verify: 0.0444 Loss_space: 0.0030  Acc_id: 0.9916 Acc_verify: 0.8902 
+Epoch 78/99
+----------
+train Loss_id: 0.0078 Loss_verify: 0.0446 Loss_space: 0.0030  Acc_id: 0.9915 Acc_verify: 0.8886 
+Epoch 79/99
+----------
+train Loss_id: 0.0076 Loss_verify: 0.0445 Loss_space: 0.0030  Acc_id: 0.9919 Acc_verify: 0.8902 
+Epoch 80/99
+----------
+train Loss_id: 0.0075 Loss_verify: 0.0445 Loss_space: 0.0030  Acc_id: 0.9911 Acc_verify: 0.8892 
+Epoch 81/99
+----------
+train Loss_id: 0.0077 Loss_verify: 0.0447 Loss_space: 0.0030  Acc_id: 0.9916 Acc_verify: 0.8883 
+Epoch 82/99
+----------
+train Loss_id: 0.0076 Loss_verify: 0.0445 Loss_space: 0.0030  Acc_id: 0.9910 Acc_verify: 0.8894 
+Epoch 83/99
+----------
+train Loss_id: 0.0075 Loss_verify: 0.0447 Loss_space: 0.0030  Acc_id: 0.9920 Acc_verify: 0.8872 
+Epoch 84/99
+----------
+train Loss_id: 0.0078 Loss_verify: 0.0447 Loss_space: 0.0030  Acc_id: 0.9914 Acc_verify: 0.8879 
+Epoch 85/99
+----------
+train Loss_id: 0.0077 Loss_verify: 0.0445 Loss_space: 0.0030  Acc_id: 0.9915 Acc_verify: 0.8905 
+Epoch 86/99
+----------
+train Loss_id: 0.0078 Loss_verify: 0.0443 Loss_space: 0.0030  Acc_id: 0.9910 Acc_verify: 0.8914 
+Epoch 87/99
+----------
+train Loss_id: 0.0077 Loss_verify: 0.0441 Loss_space: 0.0030  Acc_id: 0.9914 Acc_verify: 0.8922 
+Epoch 88/99
+----------
+train Loss_id: 0.0077 Loss_verify: 0.0445 Loss_space: 0.0030  Acc_id: 0.9910 Acc_verify: 0.8886 
+Epoch 89/99
+----------
+train Loss_id: 0.0080 Loss_verify: 0.0448 Loss_space: 0.0030  Acc_id: 0.9902 Acc_verify: 0.8863 
+Epoch 90/99
+----------
+train Loss_id: 0.0081 Loss_verify: 0.0444 Loss_space: 0.0030  Acc_id: 0.9900 Acc_verify: 0.8901 
+Epoch 91/99
+----------
+train Loss_id: 0.0077 Loss_verify: 0.0446 Loss_space: 0.0030  Acc_id: 0.9915 Acc_verify: 0.8899 
+Epoch 92/99
+----------
+train Loss_id: 0.0076 Loss_verify: 0.0448 Loss_space: 0.0030  Acc_id: 0.9918 Acc_verify: 0.8875 
+Epoch 93/99
+----------
+train Loss_id: 0.0081 Loss_verify: 0.0447 Loss_space: 0.0030  Acc_id: 0.9897 Acc_verify: 0.8874 
+Epoch 94/99
+----------
+train Loss_id: 0.0075 Loss_verify: 0.0445 Loss_space: 0.0030  Acc_id: 0.9911 Acc_verify: 0.8896 
+Epoch 95/99
+----------
+train Loss_id: 0.0075 Loss_verify: 0.0441 Loss_space: 0.0030  Acc_id: 0.9913 Acc_verify: 0.8925 
+Epoch 96/99
+----------
+train Loss_id: 0.0078 Loss_verify: 0.0442 Loss_space: 0.0030  Acc_id: 0.9913 Acc_verify: 0.8903 
+Epoch 97/99
+----------
+train Loss_id: 0.0075 Loss_verify: 0.0444 Loss_space: 0.0030  Acc_id: 0.9910 Acc_verify: 0.8885 
+Epoch 98/99
+----------
+train Loss_id: 0.0077 Loss_verify: 0.0444 Loss_space: 0.0030  Acc_id: 0.9910 Acc_verify: 0.8893 
+Epoch 99/99
+----------
+train Loss_id: 0.0080 Loss_verify: 0.0446 Loss_space: 0.0030  Acc_id: 0.9901 Acc_verify: 0.8881 
+best_epoch = 72     best_loss = 0.0259459825366823     best_acc = 0.9422412904555761
+Training complete in 333m 15s
+This is not an error. If you want to use low precision, i.e., fp16, please install the apex with cuda support (https://github.com/NVIDIA/apex) and update pytorch to 1.0
+opt = Namespace(PCB=False, batchsize=48, fp16=False, gpu_ids='0', name='sggnn', test_dir='data/market/pytorch', use_dense=True, which_epoch='best_siamese')
+opt.gpu_ids = 0
+opt.which_epoch = best_siamese
+opt.test_dir = data/market/pytorch
+opt.name = sggnn
+opt.batchsize = 48
+opt.use_dense = True
+opt.PCB = False
+opt.fp16 = False
+-------test-----------
+load easy pretrained model: ./model/sggnn/net_best_siamese.pth
+torch.Size([3368, 512])
+i =    0    CMC_tmp[0] = 1  real-time rank1 = 1.0000  avg rank1 = 1.0000
+i =  100    CMC_tmp[0] = 0  real-time rank1 = 0.6238  avg rank1 = 0.6337
+i =  200    CMC_tmp[0] = 1  real-time rank1 = 0.6337  avg rank1 = 0.6368
+i =  300    CMC_tmp[0] = 1  real-time rank1 = 0.6139  avg rank1 = 0.6312
+i =  400    CMC_tmp[0] = 1  real-time rank1 = 0.5842  avg rank1 = 0.6209
+i =  500    CMC_tmp[0] = 1  real-time rank1 = 0.8416  avg rank1 = 0.6667
+i =  600    CMC_tmp[0] = 0  real-time rank1 = 0.6634  avg rank1 = 0.6672
+i =  700    CMC_tmp[0] = 1  real-time rank1 = 0.7822  avg rank1 = 0.6847
+i =  800    CMC_tmp[0] = 1  real-time rank1 = 0.7723  avg rank1 = 0.6966
+i =  900    CMC_tmp[0] = 0  real-time rank1 = 0.8119  avg rank1 = 0.7103
+i = 1000    CMC_tmp[0] = 1  real-time rank1 = 0.7228  avg rank1 = 0.7123
+i = 1100    CMC_tmp[0] = 1  real-time rank1 = 0.6733  avg rank1 = 0.7094
+i = 1200    CMC_tmp[0] = 0  real-time rank1 = 0.7327  avg rank1 = 0.7119
+i = 1300    CMC_tmp[0] = 1  real-time rank1 = 0.8218  avg rank1 = 0.7210
+i = 1400    CMC_tmp[0] = 0  real-time rank1 = 0.7525  avg rank1 = 0.7238
+i = 1500    CMC_tmp[0] = 1  real-time rank1 = 0.7624  avg rank1 = 0.7268
+i = 1600    CMC_tmp[0] = 1  real-time rank1 = 0.7228  avg rank1 = 0.7270
+i = 1700    CMC_tmp[0] = 1  real-time rank1 = 0.7822  avg rank1 = 0.7307
+i = 1800    CMC_tmp[0] = 0  real-time rank1 = 0.7822  avg rank1 = 0.7340
+i = 1900    CMC_tmp[0] = 1  real-time rank1 = 0.7030  avg rank1 = 0.7328
+i = 2000    CMC_tmp[0] = 1  real-time rank1 = 0.8119  avg rank1 = 0.7371
+i = 2100    CMC_tmp[0] = 1  real-time rank1 = 0.7327  avg rank1 = 0.7373
+i = 2200    CMC_tmp[0] = 1  real-time rank1 = 0.7525  avg rank1 = 0.7383
+i = 2300    CMC_tmp[0] = 1  real-time rank1 = 0.7525  avg rank1 = 0.7392
+i = 2400    CMC_tmp[0] = 0  real-time rank1 = 0.7822  avg rank1 = 0.7414
+i = 2500    CMC_tmp[0] = 1  real-time rank1 = 0.7723  avg rank1 = 0.7429
+i = 2600    CMC_tmp[0] = 1  real-time rank1 = 0.8218  avg rank1 = 0.7463
+i = 2700    CMC_tmp[0] = 1  real-time rank1 = 0.8119  avg rank1 = 0.7490
+i = 2800    CMC_tmp[0] = 0  real-time rank1 = 0.8416  avg rank1 = 0.7526
+i = 2900    CMC_tmp[0] = 1  real-time rank1 = 0.9208  avg rank1 = 0.7587
+i = 3000    CMC_tmp[0] = 1  real-time rank1 = 0.8911  avg rank1 = 0.7634
+i = 3100    CMC_tmp[0] = 1  real-time rank1 = 0.8317  avg rank1 = 0.7659
+i = 3200    CMC_tmp[0] = 0  real-time rank1 = 0.8218  avg rank1 = 0.7679
+i = 3300    CMC_tmp[0] = 1  real-time rank1 = 0.7426  avg rank1 = 0.7673
+i = 3367    CMC_tmp[0] = 1  real-time rank1 = 0.8088  avg rank1 = 0.7684
+Rank@1:0.768409 Rank@5:0.896675 Rank@10:0.930226 mAP:0.556327
+calculate initial distance
+Reranking complete in 1m 8s
+top1:0.803147 top5:0.887173 top10:0.909739 mAP:0.729917
+This is not an error. If you want to use low precision, i.e., fp16, please install the apex with cuda support (https://github.com/NVIDIA/apex) and update pytorch to 1.0
+opt = Namespace(PCB=False, batchsize=48, fp16=False, gpu_ids='0', name='sggnn', test_dir='data/market/pytorch', use_dense=True, which_epoch='last_siamese')
+opt.gpu_ids = 0
+opt.which_epoch = last_siamese
+opt.test_dir = data/market/pytorch
+opt.name = sggnn
+opt.batchsize = 48
+opt.use_dense = True
+opt.PCB = False
+opt.fp16 = False
+-------test-----------
+load easy pretrained model: ./model/sggnn/net_last_siamese.pth
+torch.Size([3368, 512])
+i =    0    CMC_tmp[0] = 1  real-time rank1 = 1.0000  avg rank1 = 1.0000
+i =  100    CMC_tmp[0] = 0  real-time rank1 = 0.6238  avg rank1 = 0.6337
+i =  200    CMC_tmp[0] = 1  real-time rank1 = 0.6337  avg rank1 = 0.6368
+i =  300    CMC_tmp[0] = 1  real-time rank1 = 0.6139  avg rank1 = 0.6312
+i =  400    CMC_tmp[0] = 1  real-time rank1 = 0.5842  avg rank1 = 0.6209
+i =  500    CMC_tmp[0] = 1  real-time rank1 = 0.8416  avg rank1 = 0.6667
+i =  600    CMC_tmp[0] = 0  real-time rank1 = 0.6634  avg rank1 = 0.6672
+i =  700    CMC_tmp[0] = 1  real-time rank1 = 0.7822  avg rank1 = 0.6847
+i =  800    CMC_tmp[0] = 1  real-time rank1 = 0.7723  avg rank1 = 0.6966
+i =  900    CMC_tmp[0] = 0  real-time rank1 = 0.8119  avg rank1 = 0.7103
+i = 1000    CMC_tmp[0] = 1  real-time rank1 = 0.7228  avg rank1 = 0.7123
+i = 1100    CMC_tmp[0] = 1  real-time rank1 = 0.6733  avg rank1 = 0.7094
+i = 1200    CMC_tmp[0] = 0  real-time rank1 = 0.7327  avg rank1 = 0.7119
+i = 1300    CMC_tmp[0] = 1  real-time rank1 = 0.8218  avg rank1 = 0.7210
+i = 1400    CMC_tmp[0] = 0  real-time rank1 = 0.7525  avg rank1 = 0.7238
+i = 1500    CMC_tmp[0] = 1  real-time rank1 = 0.7624  avg rank1 = 0.7268
+i = 1600    CMC_tmp[0] = 1  real-time rank1 = 0.7228  avg rank1 = 0.7270
+i = 1700    CMC_tmp[0] = 1  real-time rank1 = 0.7822  avg rank1 = 0.7307
+i = 1800    CMC_tmp[0] = 0  real-time rank1 = 0.7822  avg rank1 = 0.7340
+i = 1900    CMC_tmp[0] = 1  real-time rank1 = 0.7030  avg rank1 = 0.7328
+i = 2000    CMC_tmp[0] = 1  real-time rank1 = 0.8119  avg rank1 = 0.7371
+i = 2100    CMC_tmp[0] = 1  real-time rank1 = 0.7327  avg rank1 = 0.7373
+i = 2200    CMC_tmp[0] = 1  real-time rank1 = 0.7525  avg rank1 = 0.7383
+i = 2300    CMC_tmp[0] = 1  real-time rank1 = 0.7525  avg rank1 = 0.7392
+i = 2400    CMC_tmp[0] = 0  real-time rank1 = 0.7822  avg rank1 = 0.7414
+i = 2500    CMC_tmp[0] = 1  real-time rank1 = 0.7723  avg rank1 = 0.7429
+i = 2600    CMC_tmp[0] = 1  real-time rank1 = 0.8218  avg rank1 = 0.7463
+i = 2700    CMC_tmp[0] = 1  real-time rank1 = 0.8119  avg rank1 = 0.7490
+i = 2800    CMC_tmp[0] = 0  real-time rank1 = 0.8416  avg rank1 = 0.7526
+i = 2900    CMC_tmp[0] = 1  real-time rank1 = 0.9208  avg rank1 = 0.7587
+i = 3000    CMC_tmp[0] = 1  real-time rank1 = 0.8911  avg rank1 = 0.7634
+i = 3100    CMC_tmp[0] = 1  real-time rank1 = 0.8317  avg rank1 = 0.7659
+i = 3200    CMC_tmp[0] = 0  real-time rank1 = 0.8218  avg rank1 = 0.7679
+i = 3300    CMC_tmp[0] = 1  real-time rank1 = 0.7426  avg rank1 = 0.7673
+i = 3367    CMC_tmp[0] = 1  real-time rank1 = 0.8088  avg rank1 = 0.7684
+Rank@1:0.768409 Rank@5:0.896675 Rank@10:0.930226 mAP:0.556327
+calculate initial distance
+Reranking complete in 1m 8s
+top1:0.803147 top5:0.887173 top10:0.909739 mAP:0.729917

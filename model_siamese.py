@@ -356,20 +356,66 @@ class SiameseNet(nn.Module):
         self.classifier = Fc_ClassBlock(512, 2, dropout=0.75, relu=False)
         # self.bn = BN(512)
 
+    # def forward(self, x1, x2=None):
+    #     output1, feature1 = self.embedding_net(x1)
+    #     if x2 is None:
+    #         return output1, feature1
+    #     output2, feature2 = self.embedding_net(x2)
+    #     feature = (feature1 - feature2).pow(2)
+    #
+    #     # f_norm = feature.norm(p=2, dim=1, keepdim=True) + 1e-8
+    #     # feature = feature.div(f_norm)
+    #
+    #     # feature = self.bn(feature)
+    #
+    #     result = self.classifier.classifier(feature)
+    #     return output1, feature1, output2, feature2, feature, result
+
+    # def forward(self, x1, x2=None):
+    #     output1, feature1 = self.embedding_net(x1)
+    #     if x2 is None:
+    #         return output1, feature1
+    #     x1_flip = x1.flip((2,))
+    #     x2_flip = x2.flip((2,))
+    #     output1_flip, feature1_flip = self.embedding_net(x1_flip)
+    #     feature1_flip = feature1_flip.flip((1,))
+    #     output2, feature2 = self.embedding_net(x2)
+    #     output2_flip, feature2_flip = self.embedding_net(x2_flip)
+    #     feature2_flip = feature2_flip.flip((1,))
+    #     feature_combine = torch.cat(
+    #         (feature1[:, :int(feature1.size(1) / 2)], feature2[:, int(feature2.size(1) / 2):]), 1)
+    #     f_norm = feature_combine.norm(p=2, dim=1, keepdim=True) + 1e-8
+    #     feature_combine = feature_combine.div(f_norm)
+    #     feature = (feature1 - feature2).pow(2)
+    #     feature_combine_1 = (feature1 - feature_combine).pow(2)
+    #     feature_combine_2 = (feature2 - feature_combine).pow(2)
+    #     result = self.classifier.classifier(feature)
+    #     result_combine_1 = self.classifier.classifier(feature_combine_1)
+    #     result_combine_2 = self.classifier.classifier(feature_combine_2)
+    #     feature1 = F.adaptive_avg_pool1d(feature1.unsqueeze(0), 128).squeeze(0)
+    #     feature2 = F.adaptive_avg_pool1d(feature2.unsqueeze(0), 128).squeeze(0)
+    #     feature1_flip = F.adaptive_avg_pool1d(feature1_flip.unsqueeze(0), 128).squeeze(0)
+    #     feature2_flip = F.adaptive_avg_pool1d(feature2_flip.unsqueeze(0), 128).squeeze(0)
+    #     return output1, feature1, feature1_flip, output2, feature2, feature2_flip, \
+    #            result, result_combine_1, result_combine_2
+
     def forward(self, x1, x2=None):
         output1, feature1 = self.embedding_net(x1)
         if x2 is None:
             return output1, feature1
         output2, feature2 = self.embedding_net(x2)
+        feature_combine = torch.cat(
+            (feature1[:, :int(feature1.size(1) / 2)], feature2[:, int(feature2.size(1) / 2):]), 1)
+        f_norm = feature_combine.norm(p=2, dim=1, keepdim=True) + 1e-8
+        feature_combine = feature_combine.div(f_norm)
         feature = (feature1 - feature2).pow(2)
-
-        # f_norm = feature.norm(p=2, dim=1, keepdim=True) + 1e-8
-        # feature = feature.div(f_norm)
-
-        # feature = self.bn(feature)
-
+        feature_combine_1 = (feature1 - feature_combine).pow(2)
+        feature_combine_2 = (feature2 - feature_combine).pow(2)
         result = self.classifier.classifier(feature)
-        return output1, feature1, output2, feature2, feature, result
+        result_combine_1 = self.classifier.classifier(feature_combine_1)
+        result_combine_2 = self.classifier.classifier(feature_combine_2)
+        return output1, feature1, feature1, output2, feature2, feature2, \
+               result, result_combine_1, result_combine_2
 
 
     def get_embedding(self, x):
