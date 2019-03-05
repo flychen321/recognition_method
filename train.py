@@ -406,13 +406,18 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
                 loss_verif = loss_verif0 + loss_verif1 + loss_verif2 + loss_verif3 + loss_verif4 + loss_verif5
                 loss_space = mse_criterion(feature_sum_orig, feature_sum_new)
                 if opt.net_loss_model == 0:
-                    r1 = 0.33
-                    r2 = 0.34
-                    r3 = 0.33
+                    r1 = 0.6
+                    r2 = 0.3
+                    r3 = 0.1
                 elif opt.net_loss_model == 1:
-                    r1 = 0.5
-                    r2 = 0.5
-                loss = loss_id + loss_verif + loss_space
+                    r1 = 0.8
+                    r2 = 0.2
+                    r3 = 0.01
+                elif opt.net_loss_model == 2:
+                    r1 = 0.8
+                    r2 = 0.2
+                    r3 = 0.
+                loss = r1 * loss_id + r2 * loss_verif + r3 * loss_space
 
                 # backward + optimize only if in training phase
                 if phase == 'train':
