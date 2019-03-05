@@ -9,7 +9,7 @@ for i in range(3):
     log_name = 'log/' + 'log_' + str(i)
     print('log name = %s' % log_name)
     cmd = 'python train.py --save_model_name ' + str(
-        i) + ' --use_dense --gpu_ids 0  --net_loss_model ' + str(i) + ' --name sggnn --train_all --batchsize  48  --erasing_p 0.5' + ' >> ' + log_name
+        i) + ' --use_dense --gpu_ids 0  --net_loss_model ' + str(i) + ' --name sggnn --train_all --batchsize  24  --erasing_p 0.5' + ' >> ' + log_name
     print('cmd = %s' % cmd)
     os.system(cmd)
 

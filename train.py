@@ -43,7 +43,7 @@ parser.add_argument('--save_model_name', default='', type=str, help='save_model_
 parser.add_argument('--data_dir', default='data/market/pytorch', type=str, help='training dir path')
 parser.add_argument('--train_all', action='store_true', help='use all training data')
 parser.add_argument('--color_jitter', action='store_true', help='use color jitter in training')
-parser.add_argument('--batchsize', default=48, type=int, help='batchsize')
+parser.add_argument('--batchsize', default=24, type=int, help='batchsize')
 parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
 parser.add_argument('--alpha', default=1.0, type=float, help='alpha')
 parser.add_argument('--erasing_p', default=0.5, type=float, help='Random Erasing probability, in [0,1]')
@@ -382,26 +382,37 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
                 #     print('opt.net_loss_model = %s    error !!!' % opt.net_loss_model)
                 #     exit()
 
-                outputs1, outputs2, result, result_combine_1, result_combine_2 = model(inputs[0], inputs[1])
-                _, id_preds1 = torch.max(outputs1.detach(), 1)
-                _, id_preds2 = torch.max(outputs2.detach(), 1)
+                # outputs1, outputs2, result, result_combine_1, result_combine_2 = model(inputs[0], inputs[1])
+                output1, output2, \
+                result, result1_12, result1_21, result2_12, result2_21, result12_21,\
+                feature_sum_orig, feature_sum_new = model(inputs[0], inputs[1])
+                _, id_preds1 = torch.max(output1.detach(), 1)
+                _, id_preds2 = torch.max(output2.detach(), 1)
                 _, vf_preds = torch.max(result.detach(), 1)
-                _, vf_combine_1_preds = torch.max(result_combine_1.detach(), 1)
-                _, vf_combine_2_preds = torch.max(result_combine_2.detach(), 1)
-                loss_id1 = criterion(outputs1, id_labels[0])
-                loss_id2 = criterion(outputs2, id_labels[1])
+                _, vf_preds1_12 = torch.max(result1_12.detach(), 1)
+                _, vf_preds1_21 = torch.max(result1_21.detach(), 1)
+                _, vf_preds2_12 = torch.max(result2_12.detach(), 1)
+                _, vf_preds2_21 = torch.max(result2_21.detach(), 1)
+                _, vf_preds12_21 = torch.max(result12_21.detach(), 1)
+                loss_id1 = criterion(output1, id_labels[0])
+                loss_id2 = criterion(output2, id_labels[1])
                 loss_id = loss_id1 + loss_id2
                 loss_verif0 = criterion(result, vf_labels)
-                loss_verif1 = criterion(result_combine_1, vf_labels)
-                loss_verif2 = criterion(result_combine_2, vf_labels)
-                loss_verif = loss_verif0 + loss_verif1 + loss_verif2
+                loss_verif1 = criterion(result1_12, vf_labels)
+                loss_verif2 = criterion(result1_21, vf_labels)
+                loss_verif3 = criterion(result2_12, vf_labels)
+                loss_verif4 = criterion(result2_21, vf_labels)
+                loss_verif5 = criterion(result12_21, vf_labels)
+                loss_verif = loss_verif0 + loss_verif1 + loss_verif2 + loss_verif3 + loss_verif4 + loss_verif5
+                loss_space = mse_criterion(feature_sum_orig, feature_sum_new)
                 if opt.net_loss_model == 0:
+                    r1 = 0.33
+                    r2 = 0.34
+                    r3 = 0.33
+                elif opt.net_loss_model == 1:
                     r1 = 0.5
                     r2 = 0.5
-                elif opt.net_loss_model == 1:
-                    r1 = 1.0
-                    r2 = 0
-                loss = loss_id + loss_verif0
+                loss = loss_id + loss_verif + loss_space
 
                 # backward + optimize only if in training phase
                 if phase == 'train':
@@ -410,27 +421,26 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
                 # statistics
                 running_id_loss += loss_id.item()  # * opt.batchsize
                 running_verif_loss += loss_verif.item()  # * opt.batchsize
+                running_space_loss += loss_space.item()
 
                 running_id_corrects += float(torch.sum(id_preds1 == id_labels[0].detach()))
                 running_id_corrects += float(torch.sum(id_preds2 == id_labels[1].detach()))
                 running_verif_corrects += float(torch.sum(vf_preds == vf_labels))
-                running_verif_corrects1 += float(torch.sum(vf_combine_1_preds == vf_labels))
-                running_verif_corrects2 += float(torch.sum(vf_combine_2_preds == vf_labels))
+                running_verif_corrects += float(torch.sum(vf_preds1_12 == vf_labels))
+                running_verif_corrects += float(torch.sum(vf_preds1_21 == vf_labels))
+                running_verif_corrects += float(torch.sum(vf_preds2_12 == vf_labels))
+                running_verif_corrects += float(torch.sum(vf_preds2_21 == vf_labels))
+                running_verif_corrects += float(torch.sum(vf_preds12_21 == vf_labels))
 
             datasize = dataset_sizes['train'] // opt.batchsize * opt.batchsize
             epoch_id_loss = running_id_loss / datasize
             epoch_verif_loss = running_verif_loss / datasize
             epoch_space_loss = running_space_loss / datasize
             epoch_id_acc = running_id_corrects / (datasize * 2)
-            # epoch_verif_acc = running_verif_corrects / (datasize * 3)
-            epoch_verif_acc = running_verif_corrects / datasize
-            epoch_verif_acc1 = running_verif_corrects1 / datasize
-            epoch_verif_acc2 = running_verif_corrects2 / datasize
+            epoch_verif_acc = running_verif_corrects / (datasize * 6)
 
-            print('{} Loss_id: {:.4f} Loss_verify: {:.4f} Loss_space: {:.4f}  Acc_id: {:.4f} Acc_verify: {:.4f} '
-                  'Acc_verify1: {:.4f} Acc_verify2: {:.4f} '.format(
-                phase, epoch_id_loss, epoch_verif_loss, epoch_space_loss, epoch_id_acc, epoch_verif_acc,
-                epoch_verif_acc1, epoch_verif_acc2))
+            print('{} Loss_id: {:.4f} Loss_verify: {:.4f} Loss_space: {:.4f}  Acc_id: {:.4f} Acc_verify: {:.4f} '.format(
+                phase, epoch_id_loss, epoch_verif_loss, epoch_space_loss, epoch_id_acc, epoch_verif_acc))
 
             epoch_acc = (epoch_id_acc + epoch_verif_acc) / 2.0
             epoch_loss = (epoch_id_loss + epoch_verif_loss) / 2.0
@@ -438,7 +448,10 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
                 best_acc = epoch_acc
                 best_loss = epoch_loss
                 best_epoch = epoch
-                best_model_wts = model.state_dict()
+                # best_model_wts = model.state_dict()
+                save_network(model, name, 'best_siamese')
+                save_network(model, name, 'best_siamese_' + str(opt.save_model_name))
+                save_whole_network(model, name, 'whole_best_siamese')
 
             y_loss[phase].append(epoch_id_loss)
             y_err[phase].append(1.0 - epoch_id_acc)
@@ -448,7 +461,7 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
                 save_network(model, name, epoch)
 
             draw_curve(epoch)
-            last_model_wts = model.state_dict()
+            # last_model_wts = model.state_dict()
 
     time_elapsed = time.time() - since
     print('best_epoch = %s     best_loss = %s     best_acc = %s' % (best_epoch, best_loss, best_acc))
@@ -456,12 +469,12 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
         time_elapsed // 60, time_elapsed % 60))
 
     # load best model weights
-    model.load_state_dict(best_model_wts)
-    save_network(model, name, 'best_siamese')
-    save_network(model, name, 'best_siamese_' + str(opt.save_model_name))
-    save_whole_network(model, name, 'whole_best_siamese')
+    # model.load_state_dict(best_model_wts)
+    # save_network(model, name, 'best_siamese')
+    # save_network(model, name, 'best_siamese_' + str(opt.save_model_name))
+    # save_whole_network(model, name, 'whole_best_siamese')
     # load last model weights
-    model.load_state_dict(last_model_wts)
+    # model.load_state_dict(last_model_wts)
     save_network(model, name, 'last_siamese')
     save_network(model, name, 'last_siamese_' + str(opt.save_model_name))
     save_whole_network(model, name, 'whole_last_siamese')

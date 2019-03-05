@@ -356,15 +356,42 @@ class SiameseNet(nn.Module):
         self.classifier = Fc_ClassBlock(1024, 2, dropout=0.75, relu=False)
         # self.bn = BN(512)
 
+    # def forward(self, x1, x2=None):
+    #     output1, feature1 = self.embedding_net(x1)
+    #     if x2 is None:
+    #         return output1, feature1
+    #     output2, feature2 = self.embedding_net(x2)
+    #     feature = (feature1 - feature2).pow(2)
+    #     result = self.classifier.classifier(feature)
+    #     return output1, output2, result, result, result
+
     def forward(self, x1, x2=None):
         output1, feature1 = self.embedding_net(x1)
         if x2 is None:
             return output1, feature1
         output2, feature2 = self.embedding_net(x2)
+        x12 = torch.cat((x1[:, :, :int(x1.size(2)/2)], x2[:, :, int(x2.size(2)/2):]), 2)
+        x21 = torch.cat((x2[:, :, :int(x2.size(2)/2)], x1[:, :, int(x1.size(2)/2):]), 2)
+        output12, feature12 = self.embedding_net(x12)
+        output21, feature21 = self.embedding_net(x21)
         feature = (feature1 - feature2).pow(2)
+        feature1_12 = (feature1 - feature12).pow(2)
+        feature1_21 = (feature1 - feature21).pow(2)
+        feature2_12 = (feature2 - feature12).pow(2)
+        feature2_21 = (feature2 - feature21).pow(2)
+        feature12_21 = (feature12 - feature21).pow(2)
         result = self.classifier.classifier(feature)
-        return output1, output2, result, result, result
-
+        result1_12 = self.classifier.classifier(feature1_12)
+        result1_21 = self.classifier.classifier(feature1_21)
+        result2_12 = self.classifier.classifier(feature2_12)
+        result2_21 = self.classifier.classifier(feature2_21)
+        result12_21 = self.classifier.classifier(feature12_21)
+        feature_sum_orig = feature1 + feature2
+        feature_sum_new = feature12 + feature21
+        # return output1, output2, result, result, result
+        return output1, output2, \
+               result, result1_12, result1_21, result2_12, result2_21, result12_21,\
+               feature_sum_orig, feature_sum_new
 
     # def forward(self, x1, x2=None):
     #     output1, feature1 = self.embedding_net(x1)
