@@ -38,6 +38,7 @@ parser.add_argument('--PCB', action='store_true', help='use PCB')
 parser.add_argument('--fp16', action='store_true', help='use fp16.')
 
 opt = parser.parse_args()
+opt.use_dense = True
 print('opt = %s' % opt)
 print('opt.gpu_ids = %s' % opt.gpu_ids)
 print('opt.which_epoch = %s' % opt.which_epoch)
