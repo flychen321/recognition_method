@@ -70,9 +70,9 @@ for str_id in str_ids:
         gpu_ids.append(id)
 
 # set gpu ids
-if len(gpu_ids) > 0:
-    torch.cuda.set_device(gpu_ids[0])
-    cudnn.benchmark = True
+# if len(gpu_ids) > 0:
+#     torch.cuda.set_device(gpu_ids[0])
+#     cudnn.benchmark = True
 
 ######################################################################
 # Load Data

@@ -440,35 +440,4 @@ class SiameseNet(nn.Module):
     #     return output1, feature1, feature1, output2, feature2, feature2, \
     #            result, result_combine_1, result_combine_2
 
-    def forward(self, x1, x2=None):
-        output1, feature1, feature_space1 = self.embedding_net(x1)
-        if x2 is None:
-            return output1, feature1
-        output2, feature2, feature_space2 = self.embedding_net(x2)
-        feature_combine = torch.cat(
-            (feature_space1[:, :, :int(feature_space1.size(2)/2)],
-             feature_space2[:, :, int(feature_space2.size(2)/2):]), 2)
-
-        feature_combine = self.reduce_dim(feature_combine)
-        feature_space1 = self.reduce_dim(feature_space1)
-        feature_space2 = self.reduce_dim(feature_space2)
-
-        feature = (feature_space1 - feature_space2).pow(2)
-        feature_combine_1 = (feature_space1 - feature_combine).pow(2)
-        feature_combine_2 = (feature_space2 - feature_combine).pow(2)
-        result = self.classifier(feature)[0]
-        result_combine_1 = self.classifier(feature_combine_1)[0]
-        result_combine_2 = self.classifier(feature_combine_2)[0]
-        return output1, output2, result, result_combine_1, result_combine_2
-
-    def reduce_dim(self, x):
-        x = F.adaptive_avg_pool2d(x, 1)
-        x = x.view(x.size(0), x.size(1))
-        f_norm = x.norm(p=2, dim=1, keepdim=True) + 1e-8
-        x = x.div(f_norm)
-        return x
-
-    def get_embedding(self, x):
-        return self.embedding_net(x)
-
-
+print(os.getcwd())

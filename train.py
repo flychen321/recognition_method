@@ -67,9 +67,9 @@ for str_id in str_ids:
         gpu_ids.append(gid)
 
 # set gpu ids
-if len(gpu_ids) > 0:
-    torch.cuda.set_device(gpu_ids[0])
-    cudnn.benchmark = True
+# if len(gpu_ids) > 0:
+#     torch.cuda.set_device(gpu_ids[0])
+#     cudnn.benchmark = True
 # print(gpu_ids[0])
 
 
@@ -407,17 +407,17 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
                 loss_verif = loss_verif0 + (loss_verif1 + loss_verif2 + loss_verif3 + loss_verif4 + loss_verif5)/5.0
                 loss_space = mse_criterion(feature_sum_orig, feature_sum_new)
                 if opt.net_loss_model == 0:
-                    r1 = 0.66
-                    r2 = 0.33
-                    r3 = 0.00
-                elif opt.net_loss_model == 1:
                     r1 = 0.5
                     r2 = 0.5
-                    r3 = 0.01
+                    r3 = 0.00
+                elif opt.net_loss_model == 1:
+                    r1 = 0.3
+                    r2 = 0.6
+                    r3 = 0.1
                 elif opt.net_loss_model == 2:
-                    r1 = 0.66
-                    r2 = 0.33
-                    r3 = 0.01
+                    r1 = 0.5
+                    r2 = 0.5
+                    r3 = 0.1
                 loss = r1 * loss_id + r2 * loss_verif + r3 * loss_space
 
                 # backward + optimize only if in training phase
