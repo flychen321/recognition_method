@@ -9,7 +9,7 @@ import math
 import cv2
 import torch
 # image size: 128 * 64 *3
-path = 'data/market/pytorch/train_all'
+path = 'data/market/pytorch/train_all_original'
 dst_path = 'data/market/pytorch/augment'
 # path = 'data/market/pytorch/part'
 def augment_once():
@@ -53,7 +53,7 @@ def augment_once():
     print('new_dir_num = %d  new_file_num = %d' % (new_dir_num, new_file_num))
     print(len(dirs))
 
-def augment_more(max_num=10000):
+def augment_more(max_id_num=1000):
     dirs1 = os.listdir(path)
     dirs2 = os.listdir(path)
     dir_len = len(dirs2)
@@ -64,7 +64,7 @@ def augment_more(max_num=10000):
     new_dir_num = 0
     new_file_num = 0
     epoc = 0
-    while new_file_num < max_num and epoc < 10:
+    while new_dir_num < max_id_num and epoc < 10:
         epoc += 1
         np.random.shuffle(dirs2)
         for i in range(int(len(dirs2))):
@@ -104,6 +104,8 @@ def augment_more(max_num=10000):
                     # cv2.waitKey(5000)
             new_dir_num += 2
             new_file_num += num * 2
+            if new_dir_num >= max_id_num:
+                break
 
     print('new_dir_num = %d  new_file_num = %d' % (new_dir_num, new_file_num))
     print(len(dirs2))
@@ -111,4 +113,4 @@ def augment_more(max_num=10000):
 
 if __name__ == '__main__':
     # augment_once()
-    augment_more(10000)
+    augment_more(500)
