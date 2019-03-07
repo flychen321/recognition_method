@@ -7,10 +7,11 @@ import random
 import os
 import math
 import cv2
+import shutil
 import torch
 # image size: 128 * 64 *3
 path = 'data/market/pytorch/train_all_original'
-dst_path = 'data/market/pytorch/augment'
+dst_path = 'data/market/pytorch/train_all'
 # path = 'data/market/pytorch/part'
 def augment_once():
     dirs = os.listdir(path)
@@ -111,6 +112,28 @@ def augment_more(max_id_num=1000):
     print(len(dirs2))
     print(epoc)
 
+
+def merge_dir():
+    dirs = os.listdir(path)
+    for dir in dirs:
+        if not os.path.exists(os.path.join(dst_path, dir)):
+            os.makedirs(os.path.join(dst_path, dir))
+            files = os.listdir(os.path.join(path, dir))
+            for file in files:
+                shutil.copy(os.path.join(path, dir, file), os.path.join(dst_path, dir, file))
+    dirs = os.listdir(dst_path)
+    file_num = 0
+    dir_num = len(dirs)
+    for dir in dirs:
+        file_num += len(os.listdir(os.path.join(dst_path, dir)))
+    print('total dir_num = %d   file_num = %d' % (dir_num, file_num))
+
+
+
 if __name__ == '__main__':
+    if os.path.exists(dst_path):
+        print('dst_path = %s is already existed !!!' % dst_path)
+        exit()
     # augment_once()
     augment_more(500)
+    merge_dir()
