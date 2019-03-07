@@ -29,7 +29,7 @@ except ImportError:  # will be 3.x series
 
 parser = argparse.ArgumentParser(description='Training')
 parser.add_argument('--gpu_ids', default='0', type=str, help='gpu_ids: e.g. 0  0,1,2  0,2')
-parser.add_argument('--which_epoch', default='best_siamese', type=str, help='0,1,2,3...or last')
+parser.add_argument('--which_epoch', default='last_siamese', type=str, help='0,1,2,3...or last')
 parser.add_argument('--test_dir', default='data/market/pytorch', type=str, help='./test_data')
 parser.add_argument('--name', default='sggnn', type=str, help='save model path')
 parser.add_argument('--batchsize', default=48, type=int, help='batchsize')
@@ -186,7 +186,7 @@ for i in range(len(dataset_list)):
 ######################################################################
 # Load Collected data Trained model
 print('-------test-----------')
-embedding_net = ft_net_dense(751)
+embedding_net = ft_net_dense(2027)
 # embedding_net = ft_net_dense(1393)
 # embedding_net = ft_net_dense(702)
 model_siamese = SiameseNet(embedding_net)

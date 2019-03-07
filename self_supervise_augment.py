@@ -10,7 +10,7 @@ import cv2
 import torch
 # image size: 128 * 64 *3
 path = 'data/market/pytorch/train_all'
-dst_path = 'data/market/augment'
+dst_path = 'data/market/pytorch/augment'
 # path = 'data/market/pytorch/part'
 def augment_once():
     dirs = os.listdir(path)
@@ -41,8 +41,8 @@ def augment_once():
                 img_new2 = np.concatenate((img2[:int(img2.shape[0] / 2), :, ], img1[int(img1.shape[0] / 2):, :, :]), 0)
                 file_name1 = dirs[i] + dirs[len(dirs) - 1 - i] + '_' + str(j) + '_c' + files1[j].split('c')[1]
                 file_name2 = dirs[len(dirs) - 1 - i] + dirs[i] + '_' + str(j) + '_c' + files2[j].split('c')[1]
-                # cv2.imwrite(os.path.join(dst_path, file_name1), img_new1)
-                # cv2.imwrite(os.path.join(dst_path, file_name2), img_new2)
+                cv2.imwrite(os.path.join(dst_path, file_name1), img_new1)
+                cv2.imwrite(os.path.join(dst_path, file_name2), img_new2)
                 # print(file_name)
                 # exit()
                 # cv2.imshow('org1', img1)

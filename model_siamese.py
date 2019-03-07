@@ -356,88 +356,43 @@ class SiameseNet(nn.Module):
         self.classifier = Fc_ClassBlock(1024, 2, dropout=0.75, relu=False)
         # self.bn = BN(512)
 
-    # def forward(self, x1, x2=None):
-    #     output1, feature1 = self.embedding_net(x1)
-    #     if x2 is None:
-    #         return output1, feature1
-    #     output2, feature2 = self.embedding_net(x2)
-    #     feature = (feature1 - feature2).pow(2)
-    #     result = self.classifier.classifier(feature)
-    #     return output1, output2, result, result, result
-
     def forward(self, x1, x2=None):
         output1, feature1 = self.embedding_net(x1)
         if x2 is None:
             return output1, feature1
         output2, feature2 = self.embedding_net(x2)
-        x12 = torch.cat((x1[:, :, :int(x1.size(2)/2)], x2[:, :, int(x2.size(2)/2):]), 2)
-        x21 = torch.cat((x2[:, :, :int(x2.size(2)/2)], x1[:, :, int(x1.size(2)/2):]), 2)
-        output12, feature12 = self.embedding_net(x12)
-        output21, feature21 = self.embedding_net(x21)
         feature = (feature1 - feature2).pow(2)
-        feature1_12 = (feature1 - feature12).pow(2)
-        feature1_21 = (feature1 - feature21).pow(2)
-        feature2_12 = (feature2 - feature12).pow(2)
-        feature2_21 = (feature2 - feature21).pow(2)
-        feature12_21 = (feature12 - feature21).pow(2)
         result = self.classifier.classifier(feature)
-        result1_12 = self.classifier.classifier(feature1_12)
-        result1_21 = self.classifier.classifier(feature1_21)
-        result2_12 = self.classifier.classifier(feature2_12)
-        result2_21 = self.classifier.classifier(feature2_21)
-        result12_21 = self.classifier.classifier(feature12_21)
-        feature_sum_orig = feature1 + feature2
-        feature_sum_new = feature12 + feature21
-        # return output1, output2, result, result, result
-        return output1, output2, \
-               result, result1_12, result1_21, result2_12, result2_21, result12_21,\
-               feature_sum_orig, feature_sum_new
+        # return output1, output2, result
+        return output1, output2, result, result, result, result, result, result, result, result
 
     # def forward(self, x1, x2=None):
     #     output1, feature1 = self.embedding_net(x1)
     #     if x2 is None:
     #         return output1, feature1
     #     output2, feature2 = self.embedding_net(x2)
-    #     feature_combine = torch.cat(
-    #         (feature1[:, :int(feature1.size(1) / 2)], feature2[:, int(feature2.size(1) / 2):]), 1)
-    #     f_norm = feature_combine.norm(p=2, dim=1, keepdim=True) + 1e-8
-    #     feature_combine = feature_combine.div(f_norm)
+    #     x12 = torch.cat((x1[:, :, :int(x1.size(2)/2)], x2[:, :, int(x2.size(2)/2):]), 2)
+    #     x21 = torch.cat((x2[:, :, :int(x2.size(2)/2)], x1[:, :, int(x1.size(2)/2):]), 2)
+    #     output12, feature12 = self.embedding_net(x12)
+    #     output21, feature21 = self.embedding_net(x21)
     #     feature = (feature1 - feature2).pow(2)
-    #     feature_combine_1 = (feature1 - feature_combine).pow(2)
-    #     feature_combine_2 = (feature2 - feature_combine).pow(2)
+    #     feature1_12 = (feature1 - feature12).pow(2)
+    #     feature1_21 = (feature1 - feature21).pow(2)
+    #     feature2_12 = (feature2 - feature12).pow(2)
+    #     feature2_21 = (feature2 - feature21).pow(2)
+    #     feature12_21 = (feature12 - feature21).pow(2)
     #     result = self.classifier.classifier(feature)
-    #     result_combine_1 = self.classifier.classifier(feature_combine_1)
-    #     result_combine_2 = self.classifier.classifier(feature_combine_2)
-    #     return output1, feature1, feature1, output2, feature2, feature2, \
-    #            result, result_combine_1, result_combine_2
-
-    # def forward(self, x1, x2=None):
-    #     output1, feature1, feature_space1 = self.embedding_net(x1)
-    #     if x2 is None:
-    #         return output1, feature1
-    #     output2, feature2, feature_space2 = self.embedding_net(x2)
-    #     feature_combine = torch.cat(
-    #         (feature_space1[:, :, :int(feature_space1.size(2)/2)],
-    #          feature_space2[:, :, int(feature_space2.size(2)/2):]), 2)
-    #
-    #     feature_combine = self.reduce_dim(feature_combine)
-    #     feature_space1 = self.reduce_dim(feature_space1)
-    #     feature_space2 = self.reduce_dim(feature_space2)
-    #
-    #     feature = (feature_space1 - feature_space2).pow(2)
-    #     feature_combine_1 = (feature_space1 - feature_combine).pow(2)
-    #     feature_combine_2 = (feature_space2 - feature_combine).pow(2)
-    #     result = self.classifier(feature)[0]
-    #     result_combine_1 = self.classifier(feature_combine_1)[0]
-    #     result_combine_2 = self.classifier(feature_combine_2)[0]
-    #     return output1, output2, result, result_combine_1, result_combine_2
-
-    def reduce_dim(self, x):
-        x = F.adaptive_avg_pool2d(x, 1)
-        x = x.view(x.size(0), x.size(1))
-        f_norm = x.norm(p=2, dim=1, keepdim=True) + 1e-8
-        x = x.div(f_norm)
-        return x
+    #     result1_12 = self.classifier.classifier(feature1_12)
+    #     result1_21 = self.classifier.classifier(feature1_21)
+    #     result2_12 = self.classifier.classifier(feature2_12)
+    #     result2_21 = self.classifier.classifier(feature2_21)
+    #     result12_21 = self.classifier.classifier(feature12_21)
+    #     feature_sum_orig = feature1 + feature2
+    #     feature_sum_new = feature12 + feature21
+    #     # return output1, output2, result, result, result
+    #     return output1, output2, \
+    #            result, result1_12, result1_21, result2_12, result2_21, result12_21,\
+    #            feature_sum_orig, feature_sum_new
 
     def get_embedding(self, x):
         return self.embedding_net(x)

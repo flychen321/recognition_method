@@ -43,7 +43,7 @@ parser.add_argument('--save_model_name', default='', type=str, help='save_model_
 parser.add_argument('--data_dir', default='data/market/pytorch', type=str, help='training dir path')
 parser.add_argument('--train_all', action='store_true', help='use all training data')
 parser.add_argument('--color_jitter', action='store_true', help='use color jitter in training')
-parser.add_argument('--batchsize', default=24, type=int, help='batchsize')
+parser.add_argument('--batchsize', default=48, type=int, help='batchsize')
 parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
 parser.add_argument('--alpha', default=1.0, type=float, help='alpha')
 parser.add_argument('--erasing_p', default=0.5, type=float, help='Random Erasing probability, in [0,1]')
@@ -399,26 +399,27 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
                 loss_id2 = criterion(output2, id_labels[1])
                 loss_id = loss_id1 + loss_id2
                 loss_verif0 = criterion(result, vf_labels)
-                loss_verif1 = criterion(result1_12, vf_labels)
-                loss_verif2 = criterion(result1_21, vf_labels)
-                loss_verif3 = criterion(result2_12, vf_labels)
-                loss_verif4 = criterion(result2_21, vf_labels)
-                loss_verif5 = criterion(result12_21, vf_labels)
-                loss_verif = loss_verif0 + (loss_verif1 + loss_verif2 + loss_verif3 + loss_verif4 + loss_verif5)/5.0
+                # loss_verif1 = criterion(result1_12, vf_labels)
+                # loss_verif2 = criterion(result1_21, vf_labels)
+                # loss_verif3 = criterion(result2_12, vf_labels)
+                # loss_verif4 = criterion(result2_21, vf_labels)
+                # loss_verif5 = criterion(result12_21, vf_labels)
+                # loss_verif = loss_verif0 + (loss_verif1 + loss_verif2 + loss_verif3 + loss_verif4 + loss_verif5)/5.0
+                loss_verif = loss_verif0
                 loss_space = mse_criterion(feature_sum_orig, feature_sum_new)
                 if opt.net_loss_model == 0:
                     r1 = 0.5
                     r2 = 0.5
                     r3 = 0.00
                 elif opt.net_loss_model == 1:
-                    r1 = 0.3
-                    r2 = 0.6
+                    r1 = 0.7
+                    r2 = 0.3
                     r3 = 0.1
                 elif opt.net_loss_model == 2:
-                    r1 = 0.5
-                    r2 = 0.5
+                    r1 = 0.8
+                    r2 = 0.2
                     r3 = 0.1
-                loss = r1 * loss_id + r2 * loss_verif + r3 * loss_space
+                loss = r1 * loss_id + r2 * loss_verif
 
                 # backward + optimize only if in training phase
                 if phase == 'train':
@@ -432,18 +433,19 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
                 running_id_corrects += float(torch.sum(id_preds1 == id_labels[0].detach()))
                 running_id_corrects += float(torch.sum(id_preds2 == id_labels[1].detach()))
                 running_verif_corrects += float(torch.sum(vf_preds == vf_labels))
-                running_verif_corrects += float(torch.sum(vf_preds1_12 == vf_labels))
-                running_verif_corrects += float(torch.sum(vf_preds1_21 == vf_labels))
-                running_verif_corrects += float(torch.sum(vf_preds2_12 == vf_labels))
-                running_verif_corrects += float(torch.sum(vf_preds2_21 == vf_labels))
-                running_verif_corrects += float(torch.sum(vf_preds12_21 == vf_labels))
+                # running_verif_corrects += float(torch.sum(vf_preds1_12 == vf_labels))
+                # running_verif_corrects += float(torch.sum(vf_preds1_21 == vf_labels))
+                # running_verif_corrects += float(torch.sum(vf_preds2_12 == vf_labels))
+                # running_verif_corrects += float(torch.sum(vf_preds2_21 == vf_labels))
+                # running_verif_corrects += float(torch.sum(vf_preds12_21 == vf_labels))
 
             datasize = dataset_sizes['train'] // opt.batchsize * opt.batchsize
             epoch_id_loss = running_id_loss / datasize
             epoch_verif_loss = running_verif_loss / datasize
             epoch_space_loss = running_space_loss / datasize
             epoch_id_acc = running_id_corrects / (datasize * 2)
-            epoch_verif_acc = running_verif_corrects / (datasize * 6)
+            # epoch_verif_acc = running_verif_corrects / (datasize * 6)
+            epoch_verif_acc = running_verif_corrects / datasize
 
             print('{} Loss_id: {:.4f} Loss_verify: {:.4f} Loss_space: {:.4f}  Acc_id: {:.4f} Acc_verify: {:.4f} '.format(
                 phase, epoch_id_loss, epoch_verif_loss, epoch_space_loss, epoch_id_acc, epoch_verif_acc))
@@ -617,9 +619,9 @@ if stage_1:
     ], weight_decay=5e-4, momentum=0.9, nesterov=True)
 
     # exp_lr_scheduler = lr_scheduler.MultiStepLR(optimizer_ft, milestones=[40, 60], gamma=0.1)
-    exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=15, gamma=0.32)
+    exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=10, gamma=0.32)
     model = train_model_siamese(model_siamese, criterion, optimizer_ft, exp_lr_scheduler,
-                                num_epochs=100)
+                                num_epochs=55)
 
 if stage_2:
     margin = 1.
