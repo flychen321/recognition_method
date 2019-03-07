@@ -407,6 +407,7 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
                 # loss_verif = loss_verif0 + (loss_verif1 + loss_verif2 + loss_verif3 + loss_verif4 + loss_verif5)/5.0
                 loss_verif = loss_verif0
                 loss_space = mse_criterion(feature_sum_orig, feature_sum_new)
+                # 0.6 * loss_id + 0.4 * loss_verif is good
                 if opt.net_loss_model == 0:
                     r1 = 0.5
                     r2 = 0.5
