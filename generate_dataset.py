@@ -153,7 +153,7 @@ def for_reid():
             dir_num -= 1
             shutil.rmtree(os.path.join(dst_path, dir))
 
-    print('after first filter total file_num = %d  dir_num = %d' % (file_num, dir_num))
+    print('after second filter total file_num = %d  dir_num = %d' % (file_num, dir_num))
 
 
 
