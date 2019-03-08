@@ -160,15 +160,14 @@ def train(model, criterion, optimizer, scheduler, num_epochs=25):
             epoch_acc = running_corrects / datasize
 
             print('{} Loss: {:.4f}  Acc: {:.4f} '.format(phase, epoch_loss, epoch_acc))
-
             if epoch_acc > best_acc or (np.fabs(epoch_acc - best_acc) < 1e-5 and epoch_loss < best_loss):
                 best_acc = epoch_acc
                 best_loss = epoch_loss
                 best_epoch = epoch
                 save_network(model, name, 'best_filter')
 
-            if epoch % 10 == 9:
-                save_network(model, name, epoch)
+            # if epoch % 10 == 9:
+            save_network(model, name, epoch)
 
     time_elapsed = time.time() - since
     print('best_epoch = %s     best_loss = %s     best_acc = %s' % (best_epoch, best_loss, best_acc))
@@ -220,8 +219,8 @@ optimizer_ft = optim.SGD([
 ], weight_decay=5e-4, momentum=0.9, nesterov=True)
 
 # exp_lr_scheduler = lr_scheduler.MultiStepLR(optimizer_ft, milestones=[40, 60], gamma=0.1)
-exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=3, gamma=0.32)
+exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=3, gamma=0.1)
 model = train(model, criterion, optimizer_ft, exp_lr_scheduler,
-                            num_epochs=10)
+                            num_epochs=8)
 
 

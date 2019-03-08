@@ -20,7 +20,7 @@ parser = argparse.ArgumentParser(description='Testing')
 parser.add_argument('--which_epoch', default='best_filter', type=str, help='0,1,2,3...or last')
 parser.add_argument('--test_dir', default='data/filter_data', type=str, help='./test_data')
 parser.add_argument('--name', default='filter_model', type=str, help='save model path')
-parser.add_argument('--batchsize', default=256, type=int, help='batchsize')
+parser.add_argument('--batchsize', default=1024, type=int, help='batchsize')
 
 opt = parser.parse_args()
 opt.use_dense = True
@@ -80,9 +80,6 @@ def test(model, criterion):
     for phase in dataset_list:
         for data in dataloaders[phase]:
             inputs, id_labels, file_name = data
-            now_batch_size, c, h, w = inputs.shape
-            if now_batch_size < opt.batchsize:  # next epoch
-                continue
             if use_gpu:
                 inputs = inputs.cuda()
             # forward
@@ -94,19 +91,20 @@ def test(model, criterion):
             # statistics
             running_loss += loss.item()  # * opt.batchsize
             running_corrects += float(torch.sum(id_preds == id_labels.detach()))
-            batch_filter_num = int(opt.batchsize/10)
+            batch_bad_num = int(inputs.size(0)/10)
             # largest=True mean select similar to real, otherwise fake
-            v, index = F.softmax(output, 1)[:, 1].topk(batch_filter_num, largest=True)
+            # v, index = F.softmax(output, 1)[:, 1].topk(batch_filter_num, largest=True)
+            v, index = output[:, 1].topk((inputs.size(0) - batch_bad_num), largest=True)
             for i in range(index.size(0)):
-                print('1 = %3d file_name = %-70s   p = %.5f' % (i, file_name[index[i]], v[i]))
-                shutil.copy(file_name[index[i]], os.path.join(sample_good, os.path.split(file_name[index[i]])[-1]))
-            v, index = F.softmax(output, 1)[:, 1].topk(batch_filter_num, largest=False)
+                if id_labels[index[i]].detach() == 0:
+                    shutil.copy(file_name[index[i]], os.path.join(sample_good, os.path.split(file_name[index[i]])[-1]))
+            # v, index = F.softmax(output, 1)[:, 1].topk(batch_filter_num, largest=False)
+            v, index = output[:, 1].topk(batch_bad_num, largest=False)
             for i in range(index.size(0)):
-                print('1 = %3d file_name = %-70s   p = %.5f' % (i, file_name[index[i]], v[i]))
-                shutil.copy(file_name[index[i]], os.path.join(sample_bad, os.path.split(file_name[index[i]])[-1]))
-            exit()
+                if id_labels[index[i]].detach() == 0:
+                    shutil.copy(file_name[index[i]], os.path.join(sample_bad, os.path.split(file_name[index[i]])[-1]))
 
-        datasize = dataset_sizes[phase] // opt.batchsize * opt.batchsize
+        datasize = dataset_sizes[phase]
         epoch_loss = running_loss / datasize
         epoch_acc = running_corrects / datasize
 

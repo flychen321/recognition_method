@@ -7,6 +7,8 @@ import numpy as np
 import math
 import scipy.sparse as sp
 import torch.nn.functional as F
+
+
 ######################################################################
 # Load model
 # ---------------------------
@@ -184,6 +186,7 @@ class BN(nn.Module):
         x = self.bn(x)
         return x
 
+
 # Define the ResNet50-based Model
 class ft_net(nn.Module):
 
@@ -242,6 +245,7 @@ class ft_net_dense(nn.Module):
         x = self.classifier(x)
         return x
 
+
 # Define the DenseNet121-based Model
 class ft_net_dense_filter(nn.Module):
 
@@ -254,20 +258,37 @@ class ft_net_dense_filter(nn.Module):
         self.classifier = Fc_ClassBlock(1024, class_num)
 
     def forward(self, x):
-        h = 32
-        up = x[:, :, int(x.size(2)/2)-h:int(x.size(2)/2)]
-        down = x[:, :, int(x.size(2)/2):int(x.size(2)/2)+h]
-        up = torch.cat((up[:, 1].unsqueeze(1), up[:, 2].unsqueeze(1), up[:, 0].unsqueeze(1)), 1)
+        h = 16
+        up = x[:, :, int(x.size(2) / 2) - h:int(x.size(2) / 2)]
+        down = x[:, :, int(x.size(2) / 2):int(x.size(2) / 2) + h]
+        # size = up.size()
+        # up = up.mean(1).unsqueeze(1).expand(size)
+        # down = down.mean(1).unsqueeze(1).expand(size)
+
+        # up = up[:, 0].unsqueeze(1).expand(size)
+        # down = down[:, 1].unsqueeze(1).expand(size)
+        # r = 0.2
+        # g = 0.1
+        # b = 0.7
+        # up = torch.cat((up[:, 1].unsqueeze(1), up[:, 2].unsqueeze(1), up[:, 0].unsqueeze(1)), 1)
+        # up = torch.cat((r*up[:, 0].unsqueeze(1), g*up[:, 1].unsqueeze(1), b*up[:, 2].unsqueeze(1)), 1)
+        # up = up.sum(1).unsqueeze(1).expand(size)
+        # r = 0.4
+        # g = 0.5
+        # b = 0.1
+        # down = torch.cat((r*down[:, 0].unsqueeze(1), g*down[:, 1].unsqueeze(1), b*down[:, 2].unsqueeze(1)), 1)
+        # down = down.sum(1).unsqueeze(1).expand(size)
         slice = torch.cat((up, down), 2)
-        # slice = x[:, :, int(x.size(2)/2)-h:int(x.size(2)/2)+h]
-        n = int(np.log2(int(x.size(2)/(h*2))))
+        n = int(np.log2(int(x.size(2) / (h * 2))))
         for i in range(n):
-            slice = torch.cat((slice, slice.flip(2)), 2)
+            # slice = torch.cat((slice, slice.flip(2)), 2)
+            slice = torch.cat((slice, slice), 2)
         x = slice
         x = self.model.features(x)
         x = x.view(x.size(0), x.size(1))
         x = self.classifier(x)
         return x
+
 
 # Define the ResNet50-based Model (Middle-Concat)
 # In the spirit of "The Devil is in the Middle: Exploiting Mid-level Representations for Cross-Domain Instance Matching." Yu, Qian, et al. arXiv:1711.08106 (2017).
@@ -372,7 +393,6 @@ class PCB_test(nn.Module):
         x = self.avgpool(x)
         y = x.view(x.size(0), x.size(1), x.size(2))
         return y
-
 
 
 class SiameseNet(nn.Module):
@@ -528,6 +548,7 @@ class Sggnn_all(nn.Module):
         d_mat_inv_sqrt = torch.diag(d_inv_sqrt)
         return adj.mm(d_mat_inv_sqrt).transpose(0, 1).mm(d_mat_inv_sqrt)
 
+
 class Sggnn_siamese(nn.Module):
     def __init__(self, siamesemodel, hard_weight=True):
         super(Sggnn_siamese, self).__init__()
@@ -662,6 +683,7 @@ class Sggnn_gcn(nn.Module):
         adj = F.softmax((adj - 100 * adj.diag().diag()), 0)
         return adj
 
+
 class Sggnn_for_test(nn.Module):
     def __init__(self):
         super(Sggnn_for_test, self).__init__()
@@ -725,4 +747,3 @@ class Sggnn_for_test(nn.Module):
         """normalize adjacency matrix."""
         adj = F.softmax((adj - 100 * adj.diag().diag()), 0)
         return adj
-
