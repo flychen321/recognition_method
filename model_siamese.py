@@ -242,6 +242,32 @@ class ft_net_dense(nn.Module):
         x = self.classifier(x)
         return x
 
+# Define the DenseNet121-based Model
+class ft_net_dense_filter(nn.Module):
+
+    def __init__(self, class_num=751):
+        super().__init__()
+        model_ft = models.densenet121(pretrained=True)
+        model_ft.features.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+        model_ft.fc = nn.Sequential()
+        self.model = model_ft
+        self.classifier = Fc_ClassBlock(1024, class_num)
+
+    def forward(self, x):
+        h = 32
+        up = x[:, :, int(x.size(2)/2)-h:int(x.size(2)/2)]
+        down = x[:, :, int(x.size(2)/2):int(x.size(2)/2)+h]
+        up = torch.cat((up[:, 1].unsqueeze(1), up[:, 2].unsqueeze(1), up[:, 0].unsqueeze(1)), 1)
+        slice = torch.cat((up, down), 2)
+        # slice = x[:, :, int(x.size(2)/2)-h:int(x.size(2)/2)+h]
+        n = int(np.log2(int(x.size(2)/(h*2))))
+        for i in range(n):
+            slice = torch.cat((slice, slice.flip(2)), 2)
+        x = slice
+        x = self.model.features(x)
+        x = x.view(x.size(0), x.size(1))
+        x = self.classifier(x)
+        return x
 
 # Define the ResNet50-based Model (Middle-Concat)
 # In the spirit of "The Devil is in the Middle: Exploiting Mid-level Representations for Cross-Domain Instance Matching." Yu, Qian, et al. arXiv:1711.08106 (2017).

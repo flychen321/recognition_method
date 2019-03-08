@@ -12,21 +12,12 @@ from torchvision import datasets, models, transforms
 import torch.backends.cudnn as cudnn
 import matplotlib
 matplotlib.use('agg')
-import matplotlib.pyplot as plt
-import copy
-from PIL import Image
 import time
 import os
-# from reid_sampler import StratifiedSampler
-from model_siamese import ft_net, ft_net_dense, PCB, verif_net
-from model_siamese import Sggnn_siamese, Sggnn_gcn, SiameseNet, Sggnn_all
+from model_siamese import ft_net_dense_filter
 from random_erasing import RandomErasing
-from datasets import TripletFolder, SiameseDataset, GcnDataset
 import yaml
-from shutil import copyfile
-from losses import ContrastiveLoss, SigmoidLoss
-from model_siamese import load_network_easy, load_network, save_network, save_whole_network
-from model_gcn import Sggnn_prepare, GCN
+from model_siamese import save_network
 
 version = torch.__version__
 
@@ -38,7 +29,7 @@ parser.add_argument('--name', default='filter_model', type=str, help='output mod
 parser.add_argument('--save_model_name', default='', type=str, help='save_model_name')
 parser.add_argument('--data_dir', default='data/filter_data', type=str, help='training dir path')
 parser.add_argument('--train_all', action='store_true', help='use all training data')
-parser.add_argument('--batchsize', default=64, type=int, help='batchsize')
+parser.add_argument('--batchsize', default=96, type=int, help='batchsize')
 parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
 parser.add_argument('--alpha', default=1.0, type=float, help='alpha')
 parser.add_argument('--erasing_p', default=0.5, type=float, help='Random Erasing probability, in [0,1]')
@@ -58,7 +49,7 @@ name = opt.name
 
 transform_train_list = [
     transforms.Resize((256, 128), interpolation=3),
-    transforms.Pad(10),
+    # transforms.Pad(10),
     # transforms.RandomCrop((256, 128)),
     transforms.RandomHorizontalFlip(),
     transforms.ToTensor(),
@@ -104,21 +95,11 @@ dataset_sizes = {x: len(image_datasets[x]) for x in ['train', 'val']}
 use_gpu = torch.cuda.is_available()
 
 since = time.time()
-# inputs, classes, pos, pos_classes = next(iter(dataloaders['train']))
 print(time.time() - since)
 
 ######################################################################
 # Training the model
 # ------------------
-#
-# Now, let's write a general function to train a model. Here, we will
-# illustrate:
-#
-# -  Scheduling the learning rate
-# -  Saving the best model
-#
-# In the following, parameter ``scheduler`` is an LR scheduler object from
-# ``torch.optim.lr_scheduler``.
 
 y_loss = {}  # loss history
 y_loss['train'] = []
@@ -184,9 +165,7 @@ def train(model, criterion, optimizer, scheduler, num_epochs=25):
                 best_acc = epoch_acc
                 best_loss = epoch_loss
                 best_epoch = epoch
-                save_network(model, name, 'best_siamese')
-                save_network(model, name, 'best_siamese_' + str(opt.save_model_name))
-                save_whole_network(model, name, 'whole_best_siamese')
+                save_network(model, name, 'best_filter')
 
             if epoch % 10 == 9:
                 save_network(model, name, epoch)
@@ -196,9 +175,7 @@ def train(model, criterion, optimizer, scheduler, num_epochs=25):
     print('Training complete in {:.0f}m {:.0f}s'.format(
         time_elapsed // 60, time_elapsed % 60))
 
-    save_network(model, name, 'last_siamese')
-    save_network(model, name, 'last_siamese_' + str(opt.save_model_name))
-    save_whole_network(model, name, 'whole_last_siamese')
+    save_network(model, name, 'last_filter')
     return model
 
 
@@ -224,7 +201,7 @@ with open('%s/opts.yaml' % dir_name, 'w') as fp:
 
 
 print('class_num = %d' % len(class_names))
-model = ft_net_dense(len(class_names))
+model = ft_net_dense_filter(len(class_names))
 if use_gpu:
     model.cuda()
 print('model structure')
@@ -243,8 +220,8 @@ optimizer_ft = optim.SGD([
 ], weight_decay=5e-4, momentum=0.9, nesterov=True)
 
 # exp_lr_scheduler = lr_scheduler.MultiStepLR(optimizer_ft, milestones=[40, 60], gamma=0.1)
-exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=20, gamma=0.2)
+exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=3, gamma=0.32)
 model = train(model, criterion, optimizer_ft, exp_lr_scheduler,
-                            num_epochs=200)
+                            num_epochs=10)
 
 
