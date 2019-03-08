@@ -13,7 +13,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import shutil
 
-src_path = 'data/filter_data/train_all_1072'
+src_path = 'data/filter_data/train_all_2027'
 dst_base_path = 'data/filter_data/'
 
 def generate_dataset():
@@ -41,19 +41,28 @@ def generate_dataset():
                 shutil.copy(os.path.join(src_path, dir, file), os.path.join(dst_base_path, dst_sub_dir2, file))
         file_num += len(files)
     print('real = %4d  fake = %4d  sum = %4d' % (real_num, fake_num, file_num))
+    return real_num, fake_num, file_num
 
 
-def sample(path = 'data/filter_data/real_sum', num = 5000):
-    files = os.listdir(path)
+def sample(path='data/filter_data', num=5000):
+    files = os.listdir(os.path.join(path, 'real'))
     np.random.shuffle(files)
-    dst_sub_dir = 'real'
+    dst_sub_dir = 'real_sample'
     if not os.path.exists(os.path.join('data/filter_data', dst_sub_dir)):
         os.makedirs(os.path.join('data/filter_data', dst_sub_dir))
     for i in range(num):
-        shutil.copy(os.path.join(path, files[i]), os.path.join('data/filter_data', dst_sub_dir, files[i]))
+        shutil.copy(os.path.join(os.path.join(path, 'real'), files[i]), os.path.join('data/filter_data', dst_sub_dir, files[i]))
+
+    files = os.listdir(os.path.join(path, 'fake'))
+    np.random.shuffle(files)
+    dst_sub_dir = 'fake_sample'
+    if not os.path.exists(os.path.join('data/filter_data', dst_sub_dir)):
+        os.makedirs(os.path.join('data/filter_data', dst_sub_dir))
+    for i in range(num):
+        shutil.copy(os.path.join(os.path.join(path, 'fake'), files[i]), os.path.join('data/filter_data', dst_sub_dir, files[i]))
 
 
-def redivide(path = 'data/filter_data', ratio = 0.8):
+def redivide(path='data/filter_data', ratio=0.9):
     dst_base_path1 = os.path.join(path, 'train_set')
     dst_base_path2 = os.path.join(path, 'test_set')
     dst_sub_dir1 = 'real'
@@ -71,26 +80,27 @@ def redivide(path = 'data/filter_data', ratio = 0.8):
     if not os.path.exists(os.path.join(dst_base_path2, dst_sub_dir2)):
         os.makedirs(os.path.join(dst_base_path2, dst_sub_dir2))
 
-    files = os.listdir(os.path.join(path, 'real'))
+    files = os.listdir(os.path.join(path, 'real_sample'))
     np.random.shuffle(files)
     for i in range(len(files)):
         if i < int(ratio * len(files)):
-            shutil.copy(os.path.join(path, 'real', files[i]), os.path.join(dst_base_path1, dst_sub_dir1, files[i]))
+            shutil.copy(os.path.join(path, 'real_sample', files[i]), os.path.join(dst_base_path1, dst_sub_dir1, files[i]))
         else:
-            shutil.copy(os.path.join(path, 'real', files[i]), os.path.join(dst_base_path2, dst_sub_dir1, files[i]))
+            shutil.copy(os.path.join(path, 'real_sample', files[i]), os.path.join(dst_base_path2, dst_sub_dir1, files[i]))
 
-    files = os.listdir(os.path.join(path, 'fake'))
+    files = os.listdir(os.path.join(path, 'fake_sample'))
     np.random.shuffle(files)
     for i in range(len(files)):
         if i < int(ratio * len(files)):
-            shutil.copy(os.path.join(path, 'fake', files[i]), os.path.join(dst_base_path1, dst_sub_dir2, files[i]))
+            shutil.copy(os.path.join(path, 'fake_sample', files[i]), os.path.join(dst_base_path1, dst_sub_dir2, files[i]))
         else:
-            shutil.copy(os.path.join(path, 'fake', files[i]), os.path.join(dst_base_path2, dst_sub_dir2, files[i]))
+            shutil.copy(os.path.join(path, 'fake_sample', files[i]), os.path.join(dst_base_path2, dst_sub_dir2, files[i]))
 
 
 
 if __name__ == '__main__':
-    # sample()
+    real_num, fake_num, file_num = generate_dataset()
+    sample(path='data/filter_data', num=min(real_num, fake_num))
     redivide()
 
 
