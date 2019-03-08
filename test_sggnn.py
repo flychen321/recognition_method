@@ -186,8 +186,9 @@ for i in range(len(dataset_list)):
 ######################################################################
 # Load Collected data Trained model
 print('-------test-----------')
-embedding_net = ft_net_dense(2027)
-# embedding_net = ft_net_dense(1393)
+class_num = len(os.listdir(os.path.join(opt.test_dir, 'train_all')))
+embedding_net = ft_net_dense(class_num)
+# embedding_net = ft_net_dense(2027)
 # embedding_net = ft_net_dense(702)
 model_siamese = SiameseNet(embedding_net)
 model_siamese = load_network_easy(model_siamese, name, opt.which_epoch)
