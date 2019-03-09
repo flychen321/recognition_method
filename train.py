@@ -409,16 +409,16 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
                 loss_space = mse_criterion(feature_sum_orig, feature_sum_new)
                 # 0.6 * loss_id + 0.4 * loss_verif is good
                 if opt.net_loss_model == 0:
-                    r1 = 0.5
-                    r2 = 0.5
+                    r1 = 0.55
+                    r2 = 0.45
                     r3 = 0.00
                 elif opt.net_loss_model == 1:
-                    r1 = 0.7
-                    r2 = 0.3
+                    r1 = 0.6
+                    r2 = 0.4
                     r3 = 0.1
                 elif opt.net_loss_model == 2:
-                    r1 = 0.8
-                    r2 = 0.2
+                    r1 = 0.55
+                    r2 = 0.45
                     r3 = 0.1
                 loss = r1 * loss_id + r2 * loss_verif
 
@@ -620,9 +620,9 @@ if stage_1:
     ], weight_decay=5e-4, momentum=0.9, nesterov=True)
 
     # exp_lr_scheduler = lr_scheduler.MultiStepLR(optimizer_ft, milestones=[40, 60], gamma=0.1)
-    exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=10, gamma=0.32)
+    exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=8, gamma=0.32)
     model = train_model_siamese(model_siamese, criterion, optimizer_ft, exp_lr_scheduler,
-                                num_epochs=55)
+                                num_epochs=45)
 
 if stage_2:
     margin = 1.

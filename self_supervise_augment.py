@@ -58,9 +58,6 @@ def augment_more(max_id_num=1000):
     dirs1 = os.listdir(path)
     dirs2 = os.listdir(path)
     dir_len = len(dirs2)
-    new_dir_num = 0
-    new_file_num = 0
-    base = 2000
     name = []
     new_dir_num = 0
     new_file_num = 0
@@ -83,8 +80,8 @@ def augment_more(max_id_num=1000):
                 os.makedirs(dir_path1)
             if not os.path.exists(dir_path2):
                 os.makedirs(dir_path2)
-                name.append(dir_path1)
-                name.append(dir_path2)
+                name.append(os.path.split(dir_path1)[-1])
+                name.append(os.path.split(dir_path2)[-1])
                 for j in range(num):
                     img1 = cv2.imread(os.path.join(path, dirs1[i], files1[index1[j]]))
                     img2 = cv2.imread(os.path.join(path, dirs2[i], files2[index2[j]]))
@@ -105,6 +102,11 @@ def augment_more(max_id_num=1000):
                     # cv2.waitKey(5000)
             new_dir_num += 2
             new_file_num += num * 2
+            dubug_dirs = os.listdir(dst_path)
+            if new_dir_num != len(dubug_dirs):
+                print('new_dir_num = %d   dubug_dirs = %d' % (new_dir_num, len(dubug_dirs)))
+                print('dir_path1 = %s   dir_path2 = %s' % (dir_path1, dir_path2))
+                exit()
             if new_dir_num >= max_id_num:
                 break
 
@@ -135,5 +137,5 @@ if __name__ == '__main__':
         print('dst_path = %s is already existed !!!' % dst_path)
         exit()
     # augment_once()
-    augment_more(500)
+    augment_more(3300)
     merge_dir()
