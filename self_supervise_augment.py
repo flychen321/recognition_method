@@ -10,7 +10,8 @@ import cv2
 import shutil
 import torch
 # image size: 128 * 64 *3
-path = 'data/market/pytorch/train_all_original'
+path = 'data/market/pytorch/train_all_filter'
+id751_path = 'data/market/pytorch/train_all_original'
 dst_path = 'data/market/pytorch/train_all'
 # path = 'data/market/pytorch/part'
 def augment_once():
@@ -111,18 +112,18 @@ def augment_more(max_id_num=1000):
                 break
 
     print('new_dir_num = %d  new_file_num = %d' % (new_dir_num, new_file_num))
-    print(len(dirs2))
-    print(epoc)
+    print('filter_dir num = %d' % len(dirs2))
+    print('epoc = %d' % epoc)
 
 
 def merge_dir():
-    dirs = os.listdir(path)
+    dirs = os.listdir(id751_path)
     for dir in dirs:
         if not os.path.exists(os.path.join(dst_path, dir)):
             os.makedirs(os.path.join(dst_path, dir))
-            files = os.listdir(os.path.join(path, dir))
+            files = os.listdir(os.path.join(id751_path, dir))
             for file in files:
-                shutil.copy(os.path.join(path, dir, file), os.path.join(dst_path, dir, file))
+                shutil.copy(os.path.join(id751_path, dir, file), os.path.join(dst_path, dir, file))
     dirs = os.listdir(dst_path)
     file_num = 0
     dir_num = len(dirs)
@@ -137,5 +138,5 @@ if __name__ == '__main__':
         print('dst_path = %s is already existed !!!' % dst_path)
         exit()
     # augment_once()
-    augment_more(3300)
+    augment_more(2300)
     merge_dir()

@@ -413,8 +413,8 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
                     r2 = 0.45
                     r3 = 0.00
                 elif opt.net_loss_model == 1:
-                    r1 = 0.6
-                    r2 = 0.4
+                    r1 = 0.55
+                    r2 = 0.45
                     r3 = 0.1
                 elif opt.net_loss_model == 2:
                     r1 = 0.55

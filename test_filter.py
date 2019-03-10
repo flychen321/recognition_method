@@ -10,17 +10,17 @@ import numpy as np
 import torch.nn.functional as F
 import shutil
 import yaml
-from model_siamese import ft_net_dense_filter
+from model_siamese import ft_net_dense_filter, ft_net_dense, SiameseNet, load_network_easy
 from torchvision.datasets.folder import default_loader
 ######################################################################
 # Options
 # --------
 
 parser = argparse.ArgumentParser(description='Testing')
-parser.add_argument('--which_epoch', default='best_filter', type=str, help='0,1,2,3...or last')
-parser.add_argument('--test_dir', default='data/filter_data', type=str, help='./test_data')
-parser.add_argument('--name', default='filter_model', type=str, help='save model path')
-parser.add_argument('--batchsize', default=1024, type=int, help='batchsize')
+parser.add_argument('--which_epoch', default='best_siamese', type=str, help='0,1,2,3...or last')
+parser.add_argument('--test_dir', default='data/market/pytorch', type=str, help='./test_data')
+parser.add_argument('--name', default='sggnn', type=str, help='save model path')
+parser.add_argument('--batchsize', default=128, type=int, help='batchsize')
 
 opt = parser.parse_args()
 opt.use_dense = True
@@ -54,11 +54,14 @@ class filter_dataset(datasets.ImageFolder):
         img = default_loader(img)
         if self.transform is not None:
             img = self.transform(img)
-        return img, int(label), file_name
+        img_up = torch.cat((img[:, :int(img.size(1)/2)], img[:, :int(img.size(1)/2)]), 1)
+        img_down = torch.cat((img[:, int(img.size(1)/2):], img[:, int(img.size(1)/2):]), 1)
+        return img_up, img_down, int(label), file_name
+        # return img, img, int(label), file_name
 
 
 data_dir = test_dir
-dataset_list = ['test_set']
+dataset_list = ['train_all']
 image_datasets = {x: filter_dataset(os.path.join(data_dir, x), data_transforms) for x in dataset_list}
 dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=opt.batchsize,
                                               shuffle=False, num_workers=16) for x in dataset_list}
@@ -79,55 +82,87 @@ def test(model, criterion):
     running_corrects = 0
     for phase in dataset_list:
         for data in dataloaders[phase]:
-            inputs, id_labels, file_name = data
+            inputs1, inputs2, id_labels, file_name = data
             if use_gpu:
-                inputs = inputs.cuda()
+                inputs1 = inputs1.cuda()
+                inputs2 = inputs2.cuda()
             # forward
             with torch.no_grad():
-                output = model(inputs)[0]
+                output1, output2, \
+                result, result, result, result, result, result, result, result\
+                    = model(inputs1, inputs1)
+                _, id_preds1 = torch.max(output1.detach(), 1)
+                _, id_preds2 = torch.max(output2.detach(), 1)
                 id_labels = id_labels.cuda()
-            _, id_preds = torch.max(output.detach(), 1)
-            loss = criterion(output, id_labels)
+            _, id_preds1 = torch.max(output1.detach(), 1)
+            _, id_preds2 = torch.max(output2.detach(), 1)
+            loss1 = criterion(output1, id_labels)
+            loss2 = criterion(output2, id_labels)
             # statistics
-            running_loss += loss.item()  # * opt.batchsize
-            running_corrects += float(torch.sum(id_preds == id_labels.detach()))
-            batch_bad_num = int(inputs.size(0)/10)
+            running_loss += loss1.item()  # * opt.batchsize
+            running_loss += loss2.item()  # * opt.batchsize
+            running_corrects += float(torch.sum(id_preds1 == id_labels.detach()))
+            running_corrects += float(torch.sum(id_preds2 == id_labels.detach()))
+            batch_bad_num = int(inputs1.size(0)/10)
             # largest=True mean select similar to real, otherwise fake
+            index1 = (id_preds1 == id_labels.detach())
+            index2 = (id_preds2 == id_labels.detach())
+            for i in range(len(index1)):
+                if index1[i].detach() == 0 or index2[i].detach() == 0:
+                    shutil.copy(file_name[i], os.path.join(sample_bad, os.path.split(file_name[i])[-1]))
+                else:
+                    shutil.copy(file_name[i], os.path.join(sample_good, os.path.split(file_name[i])[-1]))
+
             # v, index = F.softmax(output, 1)[:, 1].topk(batch_filter_num, largest=True)
-            v, index = output[:, 1].topk((inputs.size(0) - batch_bad_num), largest=True)
-            for i in range(index.size(0)):
-                if id_labels[index[i]].detach() == 0:
-                    shutil.copy(file_name[index[i]], os.path.join(sample_good, os.path.split(file_name[index[i]])[-1]))
-            # v, index = F.softmax(output, 1)[:, 1].topk(batch_filter_num, largest=False)
-            v, index = output[:, 1].topk(batch_bad_num, largest=False)
-            for i in range(index.size(0)):
-                if id_labels[index[i]].detach() == 0:
-                    shutil.copy(file_name[index[i]], os.path.join(sample_bad, os.path.split(file_name[index[i]])[-1]))
+            # v, index = output1[:, 1].topk((inputs1.size(0) - batch_bad_num), largest=True)
+            # for i in range(index.size(0)):
+            #     if id_labels[index[i]].detach() == 0:
+            #         shutil.copy(file_name[index[i]], os.path.join(sample_good, os.path.split(file_name[index[i]])[-1]))
+            # # v, index = F.softmax(output, 1)[:, 1].topk(batch_filter_num, largest=False)
+            # v, index = output1[:, 1].topk(batch_bad_num, largest=False)
+            # for i in range(index.size(0)):
+            #     if id_labels[index[i]].detach() == 0:
+            #         shutil.copy(file_name[index[i]], os.path.join(sample_bad, os.path.split(file_name[index[i]])[-1]))
 
         datasize = dataset_sizes[phase]
+        print('datasize = %d' % datasize)
+        print('good_size = %d  bad_size = %d' % (len(os.listdir(sample_good)), len(os.listdir(sample_bad))))
         epoch_loss = running_loss / datasize
-        epoch_acc = running_corrects / datasize
+        epoch_acc = running_corrects / (datasize * 2)
 
         print('{} Loss: {:.4f}  Acc: {:.4f} '.format(phase, epoch_loss, epoch_acc))
 
 
+def pack_to_dir():
+    files = os.listdir(sample_good)
+    print('original file num = %d' % len(files))
+    dir = 'train_all_filter'
+    dst_base_path = os.path.join(os.path.split(sample_good)[0], dir)
+    if os.path.exists(dst_base_path):
+        shutil.rmtree(dst_base_path)
+    os.makedirs(dst_base_path)
+    dir_num = 0
+    file_num = 0
+    for file in files:
+        sub_dir = file[:4]
+        if not os.path.exists(os.path.join(dst_base_path, sub_dir)):
+            os.makedirs(os.path.join(dst_base_path, sub_dir))
+            dir_num += 1
+        shutil.copy(os.path.join(sample_good, file), os.path.join(dst_base_path, sub_dir, file))
+        file_num += 1
+    print('dir_num = %d   file_num = %d' % (dir_num, file_num))
+
 ######################################################################
-def load_network_easy(network, name, model_name=None):
-    if model_name == None:
-        save_path = os.path.join('./model', name, 'net_%s.pth' % 'last_filter')
-    else:
-        save_path = os.path.join('./model', name, 'net_%s.pth' % model_name)
-    print('load easy pretrained model: %s' % save_path)
-    network.load_state_dict(torch.load(save_path))
-    return network
 # Load Collected data Trained model
 print('-------test-----------')
-model = ft_net_dense_filter(2)
-model = load_network_easy(model, name, opt.which_epoch)
+class_num = len(os.listdir(os.path.join(opt.test_dir, 'train_all')))
+embedding_net = ft_net_dense(751)
+model_siamese = SiameseNet(embedding_net)
+model_siamese = load_network_easy(model_siamese, name, opt.which_epoch)
+model_siamese = model_siamese.eval()
 if use_gpu:
-    model = model.cuda()
+    model = model_siamese.cuda()
 
 criterion = nn.CrossEntropyLoss()
-
-model = test(model, criterion)
-
+test(model_siamese, criterion)
+pack_to_dir()
