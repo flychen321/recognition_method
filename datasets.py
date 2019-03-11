@@ -72,45 +72,45 @@ class SiameseDataset(datasets.ImageFolder):
         self.label_to_indices = {label: np.where(self.labels == label)[0]
                                  for label in self.labels_set}
 
-        flag = []
-        soft_label = []
-        len_sub_label = 10
-        i = 0
-        for d in self.data:
-            cnt = 0
-            sub_soft_label = np.zeros((len_sub_label,)).astype(int)
-            sub_soft_label.fill(-1)
-            file_name = os.path.split(d)[-1]
-            class_name = file_name.split('_')[0]
-            # flag 1 means real; 0 means fake
-            if len(class_name) == 4:
-                flag.append(1)
-                for c in self.class_to_idx.keys():
-                    if class_name in c[:4] or class_name in c[-4:]:
-                        sub_soft_label[cnt] = self.class_to_idx[c]
-                        cnt += 1
-                        if cnt >= len_sub_label:
-                            print('cnt %d >= len_sub_label %d' % (cnt, len_sub_label))
-                            exit()
-            else:
-                flag.append(0)
-                class_name1 = class_name[:4]
-                class_name2 = class_name[-4:]
-                for c in self.class_to_idx.keys():
-                    if class_name1 in c[:4] or class_name2 in c[-4:]:
-                        sub_soft_label[cnt] = self.class_to_idx[c]
-                        cnt += 1
-                        if cnt >= len_sub_label:
-                            print('cnt %d >= len_sub_label %d' % (cnt, len_sub_label))
-                            exit()
-            sub_soft_label = np.asarray(sub_soft_label)
-            soft_label.append(sub_soft_label)
-            i += 1
-            if i % 2000 == 0:
-                print('i = %6d   calculate soft label' % i)
-        self.flag = np.asarray(flag)
-        self.soft_label = np.asarray(soft_label)
-        self.soft_label = soft_label
+        # flag = []
+        # soft_label = []
+        # len_sub_label = 10
+        # i = 0
+        # for d in self.data:
+        #     cnt = 0
+        #     sub_soft_label = np.zeros((len_sub_label,)).astype(int)
+        #     sub_soft_label.fill(-1)
+        #     file_name = os.path.split(d)[-1]
+        #     class_name = file_name.split('_')[0]
+        #     # flag 1 means real; 0 means fake
+        #     if len(class_name) == 4:
+        #         flag.append(1)
+        #         for c in self.class_to_idx.keys():
+        #             if class_name in c[:4] or class_name in c[-4:]:
+        #                 sub_soft_label[cnt] = self.class_to_idx[c]
+        #                 cnt += 1
+        #                 if cnt >= len_sub_label:
+        #                     print('cnt %d >= len_sub_label %d' % (cnt, len_sub_label))
+        #                     exit()
+        #     else:
+        #         flag.append(0)
+        #         class_name1 = class_name[:4]
+        #         class_name2 = class_name[-4:]
+        #         for c in self.class_to_idx.keys():
+        #             if class_name1 in c[:4] or class_name2 in c[-4:]:
+        #                 sub_soft_label[cnt] = self.class_to_idx[c]
+        #                 cnt += 1
+        #                 if cnt >= len_sub_label:
+        #                     print('cnt %d >= len_sub_label %d' % (cnt, len_sub_label))
+        #                     exit()
+        #     sub_soft_label = np.asarray(sub_soft_label)
+        #     soft_label.append(sub_soft_label)
+        #     i += 1
+        #     if i % 2000 == 0:
+        #         print('i = %6d   calculate soft label' % i)
+        # self.flag = np.asarray(flag)
+        # self.soft_label = np.asarray(soft_label)
+        # self.soft_label = soft_label
 
         cams = []
         for s in self.samples:
@@ -125,7 +125,7 @@ class SiameseDataset(datasets.ImageFolder):
     def __getitem__(self, index):
         siamese_target = np.random.randint(0, 2)
         img1, label1 = self.data[index], self.labels[index].item()
-        flag1, softlabel1 = self.flag[index], self.soft_label[index]
+        # flag1, softlabel1 = self.flag[index], self.soft_label[index]
         if siamese_target == 1:
             siamese_index = index
             while siamese_index == index:
@@ -134,14 +134,15 @@ class SiameseDataset(datasets.ImageFolder):
             siamese_label = np.random.choice(list(self.labels_set - set([label1])))
             siamese_index = np.random.choice(self.label_to_indices[siamese_label])
         img2, label2 = self.data[siamese_index], self.labels[siamese_index].item()
-        flag2, softlabel2 = self.flag[siamese_index], self.soft_label[siamese_index]
+        # flag2, softlabel2 = self.flag[siamese_index], self.soft_label[siamese_index]
         img1 = default_loader(img1)
         img2 = default_loader(img2)
         if self.transform is not None:
             img1 = self.transform(img1)
             img2 = self.transform(img2)
 
-        return (img1, img2), siamese_target, (int(label1), int(label2)), (flag1, flag2), (softlabel1, softlabel2)
+        # return (img1, img2), siamese_target, (int(label1), int(label2)), (flag1, flag2), (softlabel1, softlabel2)
+        return (img1, img2), siamese_target, (int(label1), int(label2))
 
     def __len__(self):
         return len(self.imgs)

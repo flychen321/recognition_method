@@ -17,9 +17,9 @@ from torchvision.datasets.folder import default_loader
 # --------
 
 parser = argparse.ArgumentParser(description='Testing')
-parser.add_argument('--which_epoch', default='best_siamese', type=str, help='0,1,2,3...or last')
+parser.add_argument('--which_epoch', default='best_filter751', type=str, help='0,1,2,3...or last')
 parser.add_argument('--test_dir', default='data/market/pytorch', type=str, help='./test_data')
-parser.add_argument('--name', default='sggnn', type=str, help='save model path')
+parser.add_argument('--name', default='filter_model', type=str, help='save model path')
 parser.add_argument('--batchsize', default=128, type=int, help='batchsize')
 
 opt = parser.parse_args()
@@ -103,12 +103,12 @@ def test(model, criterion):
             running_loss += loss2.item()  # * opt.batchsize
             running_corrects += float(torch.sum(id_preds1 == id_labels.detach()))
             running_corrects += float(torch.sum(id_preds2 == id_labels.detach()))
-            batch_bad_num = int(inputs1.size(0)/10)
+            batch_bad_num = int(inputs1.size(0)/20)
             # largest=True mean select similar to real, otherwise fake
             index1 = (id_preds1 == id_labels.detach())
             index2 = (id_preds2 == id_labels.detach())
             for i in range(len(index1)):
-                if index1[i].detach() == 0 or index2[i].detach() == 0:
+                if index1[i].detach() == 0 and index2[i].detach() == 0:
                     shutil.copy(file_name[i], os.path.join(sample_bad, os.path.split(file_name[i])[-1]))
                 else:
                     shutil.copy(file_name[i], os.path.join(sample_good, os.path.split(file_name[i])[-1]))
@@ -165,4 +165,4 @@ if use_gpu:
 
 criterion = nn.CrossEntropyLoss()
 test(model_siamese, criterion)
-pack_to_dir()
+# pack_to_dir()

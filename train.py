@@ -347,7 +347,7 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
             cnt = 0
             for data in dataloaders[phase]:
                 # get the inputs
-                inputs, vf_labels, id_labels, flag, softlabel = data
+                inputs, vf_labels, id_labels = data
                 now_batch_size, c, h, w = inputs[0].shape
                 if now_batch_size < opt.batchsize:  # next epoch
                     continue
@@ -356,15 +356,9 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
                     inputs = (inputs,)
                 if type(id_labels) not in (tuple, list):
                     id_labels = (id_labels,)
-                if type(flag) not in (tuple, list):
-                    flag = (flag,)
-                if type(softlabel) not in (tuple, list):
-                    softlabel = (softlabel,)
                 if use_gpu:
                     inputs = tuple(d.cuda() for d in inputs)
                     id_labels = tuple(d.cuda() for d in id_labels)
-                    flag = tuple(d.cuda() for d in flag)
-                    softlabel = tuple(d.cuda() for d in softlabel)
                     if vf_labels is not None:
                         vf_labels = vf_labels.cuda()
 
@@ -406,18 +400,7 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
                 _, vf_preds12_21 = torch.max(result12_21.detach(), 1)
                 loss_id1 = criterion(output1, id_labels[0])
                 loss_id2 = criterion(output2, id_labels[1])
-                loss_hard_id = loss_id1 + loss_id2
-
-                softlabel1, mask1 = cal_softlabel(softlabel[0], id_labels[0], output1.shape)
-                softlabel2, mask2 = cal_softlabel(softlabel[1], id_labels[1], output2.shape)
-                loss_soft_id1 = loss_entropy(output1, softlabel1)
-                loss_soft_id2 = loss_entropy(output2, softlabel2)
-                loss_bce_id1 = loss_bce(output1, mask1, softlabel1)
-                loss_bce_id2 = loss_bce(output2, mask2, softlabel2)
-                loss_bce_id = loss_bce_id1 + loss_bce_id2
-                loss_soft_id = loss_soft_id1 + loss_soft_id2
-                ratio = 10000
-                loss_id = loss_hard_id + ratio * loss_bce_id
+                loss_id = loss_id1 + loss_id2
                 loss_verif0 = criterion(result, vf_labels)
 
                 # loss_verif1 = criterion(result1_12, vf_labels)
@@ -461,10 +444,10 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
                 # running_verif_corrects += float(torch.sum(vf_preds2_21 == vf_labels))
                 # running_verif_corrects += float(torch.sum(vf_preds12_21 == vf_labels))
 
-                if cnt % 50 == 0:
-                    print('loss_hard_id = %.5f  loss_soft_id = %.5f  loss_bce_id = %.5f' % (
-                        loss_hard_id, loss_soft_id, ratio * loss_bce_id))
-                cnt += 1
+                # if cnt % 50 == 0:
+                #     print('loss_hard_id = %.5f  loss_soft_id = %.5f  loss_bce_id = %.5f' % (
+                #         loss_hard_id, loss_soft_id, ratio * loss_bce_id))
+                # cnt += 1
             datasize = dataset_sizes['train'] // opt.batchsize * opt.batchsize
             epoch_id_loss = running_id_loss / datasize
             epoch_verif_loss = running_verif_loss / datasize
