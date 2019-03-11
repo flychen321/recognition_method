@@ -80,6 +80,8 @@ def test(model, criterion):
     model.eval()
     running_loss = 0
     running_corrects = 0
+    cnt_1 = 0
+    cnt_2 = 0
     for phase in dataset_list:
         for data in dataloaders[phase]:
             inputs1, inputs2, id_labels, file_name = data
@@ -90,12 +92,10 @@ def test(model, criterion):
             with torch.no_grad():
                 output1, output2, \
                 result, result, result, result, result, result, result, result\
-                    = model(inputs1, inputs1)
+                    = model(inputs1, inputs2)
                 _, id_preds1 = torch.max(output1.detach(), 1)
                 _, id_preds2 = torch.max(output2.detach(), 1)
                 id_labels = id_labels.cuda()
-            _, id_preds1 = torch.max(output1.detach(), 1)
-            _, id_preds2 = torch.max(output2.detach(), 1)
             loss1 = criterion(output1, id_labels)
             loss2 = criterion(output2, id_labels)
             # statistics
@@ -109,9 +109,12 @@ def test(model, criterion):
             index2 = (id_preds2 == id_labels.detach())
             for i in range(len(index1)):
                 if index1[i].detach() == 0 and index2[i].detach() == 0:
+                    cnt_1 += 1
                     shutil.copy(file_name[i], os.path.join(sample_bad, os.path.split(file_name[i])[-1]))
                 else:
                     shutil.copy(file_name[i], os.path.join(sample_good, os.path.split(file_name[i])[-1]))
+                if index1[i].detach() == 0 or index2[i].detach() == 0:
+                    cnt_2 += 1
 
             # v, index = F.softmax(output, 1)[:, 1].topk(batch_filter_num, largest=True)
             # v, index = output1[:, 1].topk((inputs1.size(0) - batch_bad_num), largest=True)
@@ -131,6 +134,7 @@ def test(model, criterion):
         epoch_acc = running_corrects / (datasize * 2)
 
         print('{} Loss: {:.4f}  Acc: {:.4f} '.format(phase, epoch_loss, epoch_acc))
+        print('cnt1 = %d   cnt2 = %d' % (cnt_1, cnt_2))
 
 
 def pack_to_dir():
@@ -165,4 +169,4 @@ if use_gpu:
 
 criterion = nn.CrossEntropyLoss()
 test(model_siamese, criterion)
-# pack_to_dir()
+pack_to_dir()
