@@ -344,7 +344,7 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
             # Iterate over data.
             for data in dataloaders[phase]:
                 # get the inputs
-                inputs, vf_labels, id_labels = data
+                inputs, vf_labels, id_labels, flag, softlabel = data
                 now_batch_size, c, h, w = inputs[0].shape
                 if now_batch_size < opt.batchsize:  # next epoch
                     continue
@@ -353,9 +353,15 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
                     inputs = (inputs,)
                 if type(id_labels) not in (tuple, list):
                     id_labels = (id_labels,)
+                if type(flag) not in (tuple, list):
+                    flag = (flag,)
+                if type(softlabel) not in (tuple, list):
+                    softlabel = (softlabel,)
                 if use_gpu:
                     inputs = tuple(d.cuda() for d in inputs)
                     id_labels = tuple(d.cuda() for d in id_labels)
+                    flag = tuple(d.cuda() for d in flag)
+                    softlabel = tuple(d.cuda() for d in softlabel)
                     if vf_labels is not None:
                         vf_labels = vf_labels.cuda()
 
@@ -397,7 +403,18 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
                 _, vf_preds12_21 = torch.max(result12_21.detach(), 1)
                 loss_id1 = criterion(output1, id_labels[0])
                 loss_id2 = criterion(output2, id_labels[1])
-                loss_id = loss_id1 + loss_id2
+                # loss_id = loss_id1 + loss_id2
+
+
+                softlabel1 = cal_softlabel(softlabel[0], id_labels[0], output1.shape)
+                softlabel2 = cal_softlabel(softlabel[1], id_labels[1], output2.shape)
+                loss_soft_id1 = loss_entropy(output1, softlabel1)
+                loss_soft_id2 = loss_entropy(output2, softlabel2)
+                loss_soft_id = loss_soft_id1 + loss_soft_id2
+                loss_id = loss_soft_id
+
+                # print('loss_soft_id = %.5f  loss_id = %.5f' % (loss_soft_id, loss_id))
+
                 loss_verif0 = criterion(result, vf_labels)
                 # loss_verif1 = criterion(result1_12, vf_labels)
                 # loss_verif2 = criterion(result1_21, vf_labels)
@@ -457,33 +474,23 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
                 best_acc = epoch_acc
                 best_loss = epoch_loss
                 best_epoch = epoch
-                # best_model_wts = model.state_dict()
                 save_network(model, name, 'best_siamese')
                 save_network(model, name, 'best_siamese_' + str(opt.save_model_name))
                 save_whole_network(model, name, 'whole_best_siamese')
 
             y_loss[phase].append(epoch_id_loss)
             y_err[phase].append(1.0 - epoch_id_acc)
-            # deep copy the model
 
             if epoch % 10 == 9:
                 save_network(model, name, epoch)
 
             draw_curve(epoch)
-            # last_model_wts = model.state_dict()
 
     time_elapsed = time.time() - since
     print('best_epoch = %s     best_loss = %s     best_acc = %s' % (best_epoch, best_loss, best_acc))
     print('Training complete in {:.0f}m {:.0f}s'.format(
         time_elapsed // 60, time_elapsed % 60))
 
-    # load best model weights
-    # model.load_state_dict(best_model_wts)
-    # save_network(model, name, 'best_siamese')
-    # save_network(model, name, 'best_siamese_' + str(opt.save_model_name))
-    # save_whole_network(model, name, 'whole_best_siamese')
-    # load last model weights
-    # model.load_state_dict(last_model_wts)
     save_network(model, name, 'last_siamese')
     save_network(model, name, 'last_siamese_' + str(opt.save_model_name))
     save_whole_network(model, name, 'whole_last_siamese')
@@ -558,6 +565,51 @@ fig = plt.figure()
 ax0 = fig.add_subplot(121, title="triplet_loss")
 ax1 = fig.add_subplot(122, title="top1_err")
 
+def cal_softlabel(softlabel, id_labels, shape):
+    label = torch.zeros(shape)
+    if use_gpu:
+        label = label.cuda()
+    cnt = torch.sum(softlabel != -1, 1)
+    for i in range(shape[0]):
+        if cnt[i] == 0:
+            print('cnt = 0')
+            exit()
+        elif cnt[i] == 1:
+            label[i][id_labels[i]] = 1
+        else:
+            if opt.net_loss_model == 0:
+                main_p = 0.9
+            elif opt.net_loss_model == 1:
+                main_p = 0.8
+            elif opt.net_loss_model == 2:
+                main_p = 0.95
+            other_p = (1-main_p)/float(cnt[i]-1)
+            label[i][softlabel[i][:cnt[i]]] = other_p
+            label[i][id_labels[i]] = main_p
+        if np.fabs(label[i].sum() - 1) > 1e-3:
+            print('sum of proability is not 1 but %s' % (label[i].sum()))
+            exit()
+    return label
+
+
+def loss_entropy(input, target_soft, reduce=True):
+    input = F.log_softmax(input, dim=1)
+    result = -target_soft * input
+    result = torch.sum(result, 1)
+    if reduce:
+        result = torch.mean(result)
+    return result
+
+# def loss_entropy_for_test(input, target, reduce=True):
+#     label = torch.zeros(input.shape).cuda()
+#     for i in range(input.size(0)):
+#         label[i][target[i]] = 1
+#     input = F.log_softmax(input, dim=1)
+#     result = -label * input
+#     result = torch.sum(result, 1)
+#     if reduce:
+#         result = torch.mean(result)
+#     return result
 
 def draw_curve(current_epoch):
     x_epoch.append(current_epoch)
