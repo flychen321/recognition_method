@@ -135,12 +135,14 @@ image_datasets['val'] = dataset(os.path.join(data_dir, 'val'),
 
 dataloaders_sgg = {}
 dataloaders_sgg['train'] = torch.utils.data.DataLoader(
-    GcnDataset(os.path.join(data_dir, 'train_all'), data_transforms['train'], img_num=4), batch_size=opt.batchsize, shuffle=True,
+    GcnDataset(os.path.join(data_dir, 'train_all'), data_transforms['train'], img_num=4), batch_size=opt.batchsize,
+    shuffle=True,
     num_workers=8)
 
 dataloaders_gcn = {}
 dataloaders_gcn['train'] = torch.utils.data.DataLoader(
-    GcnDataset(os.path.join(data_dir, 'train_all'), data_transforms['train'], img_num=2), batch_size=opt.batchsize, shuffle=True,
+    GcnDataset(os.path.join(data_dir, 'train_all'), data_transforms['train'], img_num=2), batch_size=opt.batchsize,
+    shuffle=True,
     num_workers=8)
 
 batch = {}
@@ -342,6 +344,7 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
             running_verif_corrects1 = 0.0
             running_verif_corrects2 = 0.0
             # Iterate over data.
+            cnt = 0
             for data in dataloaders[phase]:
                 # get the inputs
                 inputs, vf_labels, id_labels, flag, softlabel = data
@@ -391,7 +394,7 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
 
                 # outputs1, outputs2, result, result_combine_1, result_combine_2 = model(inputs[0], inputs[1])
                 output1, output2, \
-                result, result1_12, result1_21, result2_12, result2_21, result12_21,\
+                result, result1_12, result1_21, result2_12, result2_21, result12_21, \
                 feature_sum_orig, feature_sum_new = model(inputs[0], inputs[1])
                 _, id_preds1 = torch.max(output1.detach(), 1)
                 _, id_preds2 = torch.max(output2.detach(), 1)
@@ -403,19 +406,20 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
                 _, vf_preds12_21 = torch.max(result12_21.detach(), 1)
                 loss_id1 = criterion(output1, id_labels[0])
                 loss_id2 = criterion(output2, id_labels[1])
-                # loss_id = loss_id1 + loss_id2
+                loss_hard_id = loss_id1 + loss_id2
 
-
-                softlabel1 = cal_softlabel(softlabel[0], id_labels[0], output1.shape)
-                softlabel2 = cal_softlabel(softlabel[1], id_labels[1], output2.shape)
+                softlabel1, mask1 = cal_softlabel(softlabel[0], id_labels[0], output1.shape)
+                softlabel2, mask2 = cal_softlabel(softlabel[1], id_labels[1], output2.shape)
                 loss_soft_id1 = loss_entropy(output1, softlabel1)
                 loss_soft_id2 = loss_entropy(output2, softlabel2)
+                loss_bce_id1 = loss_bce(output1, mask1, softlabel1)
+                loss_bce_id2 = loss_bce(output2, mask2, softlabel2)
+                loss_bce_id = loss_bce_id1 + loss_bce_id2
                 loss_soft_id = loss_soft_id1 + loss_soft_id2
-                loss_id = loss_soft_id
-
-                # print('loss_soft_id = %.5f  loss_id = %.5f' % (loss_soft_id, loss_id))
-
+                ratio = 10000
+                loss_id = loss_hard_id + ratio * loss_bce_id
                 loss_verif0 = criterion(result, vf_labels)
+
                 # loss_verif1 = criterion(result1_12, vf_labels)
                 # loss_verif2 = criterion(result1_21, vf_labels)
                 # loss_verif3 = criterion(result2_12, vf_labels)
@@ -457,6 +461,10 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
                 # running_verif_corrects += float(torch.sum(vf_preds2_21 == vf_labels))
                 # running_verif_corrects += float(torch.sum(vf_preds12_21 == vf_labels))
 
+                if cnt % 50 == 0:
+                    print('loss_hard_id = %.5f  loss_soft_id = %.5f  loss_bce_id = %.5f' % (
+                        loss_hard_id, loss_soft_id, ratio * loss_bce_id))
+                cnt += 1
             datasize = dataset_sizes['train'] // opt.batchsize * opt.batchsize
             epoch_id_loss = running_id_loss / datasize
             epoch_verif_loss = running_verif_loss / datasize
@@ -465,8 +473,9 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
             # epoch_verif_acc = running_verif_corrects / (datasize * 6)
             epoch_verif_acc = running_verif_corrects / datasize
 
-            print('{} Loss_id: {:.4f} Loss_verify: {:.4f} Loss_space: {:.4f}  Acc_id: {:.4f} Acc_verify: {:.4f} '.format(
-                phase, epoch_id_loss, epoch_verif_loss, epoch_space_loss, epoch_id_acc, epoch_verif_acc))
+            print(
+                '{} Loss_id: {:.4f} Loss_verify: {:.4f} Loss_space: {:.4f}  Acc_id: {:.4f} Acc_verify: {:.4f} '.format(
+                    phase, epoch_id_loss, epoch_verif_loss, epoch_space_loss, epoch_id_acc, epoch_verif_acc))
 
             epoch_acc = (epoch_id_acc + epoch_verif_acc) / 2.0
             epoch_loss = (epoch_id_loss + epoch_verif_loss) / 2.0
@@ -565,10 +574,13 @@ fig = plt.figure()
 ax0 = fig.add_subplot(121, title="triplet_loss")
 ax1 = fig.add_subplot(122, title="top1_err")
 
+
 def cal_softlabel(softlabel, id_labels, shape):
     label = torch.zeros(shape)
+    mask = torch.zeros(shape)
     if use_gpu:
         label = label.cuda()
+        mask = mask.cuda()
     cnt = torch.sum(softlabel != -1, 1)
     for i in range(shape[0]):
         if cnt[i] == 0:
@@ -580,16 +592,17 @@ def cal_softlabel(softlabel, id_labels, shape):
             if opt.net_loss_model == 0:
                 main_p = 0.9
             elif opt.net_loss_model == 1:
-                main_p = 0.8
+                main_p = 0.98
             elif opt.net_loss_model == 2:
                 main_p = 0.95
-            other_p = (1-main_p)/float(cnt[i]-1)
+            other_p = (1 - main_p) / float(cnt[i] - 1)
             label[i][softlabel[i][:cnt[i]]] = other_p
             label[i][id_labels[i]] = main_p
         if np.fabs(label[i].sum() - 1) > 1e-3:
             print('sum of proability is not 1 but %s' % (label[i].sum()))
             exit()
-    return label
+        mask[i][softlabel[i][:cnt[i]]] = 1
+    return label, mask
 
 
 def loss_entropy(input, target_soft, reduce=True):
@@ -599,6 +612,12 @@ def loss_entropy(input, target_soft, reduce=True):
     if reduce:
         result = torch.mean(result)
     return result
+
+
+def loss_bce(input, label, weight):
+    result = F.binary_cross_entropy_with_logits(input, label, weight, reduction='elementwise_mean')
+    return result
+
 
 # def loss_entropy_for_test(input, target, reduce=True):
 #     label = torch.zeros(input.shape).cuda()
@@ -720,7 +739,7 @@ if stage_3:
                     nclass=2,
                     dropout=0.5)
     optimizer_gcn = optim.Adam(model_gcn.parameters(),
-                           lr=0.001, weight_decay=5e-4)
+                               lr=0.001, weight_decay=5e-4)
 
     if use_gpu:
         model_siamese.cuda()
