@@ -10,7 +10,7 @@ import cv2
 import shutil
 import torch
 # image size: 128 * 64 *3
-path = 'data/market/pytorch/train_all_filter'
+path = 'data/filter_data/train_all_filter'
 id751_path = 'data/market/pytorch/train_all_original'
 dst_path = 'data/market/pytorch/train_all'
 # path = 'data/market/pytorch/part'

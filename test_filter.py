@@ -20,7 +20,7 @@ parser = argparse.ArgumentParser(description='Testing')
 parser.add_argument('--which_epoch', default='best_filter751', type=str, help='0,1,2,3...or last')
 parser.add_argument('--test_dir', default='data/market/pytorch', type=str, help='./test_data')
 parser.add_argument('--name', default='filter_model', type=str, help='save model path')
-parser.add_argument('--batchsize', default=128, type=int, help='batchsize')
+parser.add_argument('--batchsize', default=1024, type=int, help='batchsize')
 
 opt = parser.parse_args()
 opt.use_dense = True
@@ -103,30 +103,42 @@ def test(model, criterion):
             running_loss += loss2.item()  # * opt.batchsize
             running_corrects += float(torch.sum(id_preds1 == id_labels.detach()))
             running_corrects += float(torch.sum(id_preds2 == id_labels.detach()))
-            batch_bad_num = int(inputs1.size(0)/20)
+            ratio = 0.005
+            batch_bad_num = int(ratio * inputs1.size(0))
             # largest=True mean select similar to real, otherwise fake
-            index1 = (id_preds1 == id_labels.detach())
-            index2 = (id_preds2 == id_labels.detach())
+            p1 = [F.softmax(output1, 1)[i, id_labels[i]] for i in range(output1.size(0))]
+            p1, index1 = torch.sort(torch.Tensor(p1), descending=False)
+            p2 = [F.softmax(output2, 1)[i, id_labels[i]] for i in range(output2.size(0))]
+            p2, index2 = torch.sort(torch.Tensor(p2), descending=False)
+            output = output1 + output2
+            p = [F.softmax(output, 1)[i, id_labels[i]] for i in range(output.size(0))]
+            p, index = torch.sort(torch.Tensor(p), descending=False)
+
             for i in range(len(index1)):
-                if index1[i].detach() == 0 and index2[i].detach() == 0:
+                if i < batch_bad_num:
+                    # shutil.copy(file_name[index1[i]], os.path.join(sample_bad, os.path.split(file_name[index1[i]])[-1]))
+                    # shutil.copy(file_name[index2[i]], os.path.join(sample_bad, os.path.split(file_name[index2[i]])[-1]))
+                    shutil.copy(file_name[index[i]], os.path.join(sample_bad, os.path.split(file_name[index[i]])[-1]))
                     cnt_1 += 1
-                    shutil.copy(file_name[i], os.path.join(sample_bad, os.path.split(file_name[i])[-1]))
+                # elif i >= len(index1) - batch_bad_num:
                 else:
-                    shutil.copy(file_name[i], os.path.join(sample_good, os.path.split(file_name[i])[-1]))
-                if index1[i].detach() == 0 or index2[i].detach() == 0:
+                    # shutil.copy(file_name[index1[i]], os.path.join(sample_good, os.path.split(file_name[index1[i]])[-1]))
+                    # shutil.copy(file_name[index2[i]], os.path.join(sample_good, os.path.split(file_name[index2[i]])[-1]))
+                    shutil.copy(file_name[index[i]], os.path.join(sample_good, os.path.split(file_name[index[i]])[-1]))
                     cnt_2 += 1
+
+            # index1 = (id_preds1 == id_labels.detach())
+            # index2 = (id_preds2 == id_labels.detach())
+            # for i in range(len(index1)):
+            #     if index1[i].detach() == 0 and index2[i].detach() == 0:
+            #         cnt_1 += 1
+            #         shutil.copy(file_name[i], os.path.join(sample_bad, os.path.split(file_name[i])[-1]))
+            #     else:
+            #         shutil.copy(file_name[i], os.path.join(sample_good, os.path.split(file_name[i])[-1]))
+            #     if index1[i].detach() == 0 or index2[i].detach() == 0:
+            #         cnt_2 += 1
             print(cnt_1, cnt_2)
 
-            # v, index = F.softmax(output, 1)[:, 1].topk(batch_filter_num, largest=True)
-            # v, index = output1[:, 1].topk((inputs1.size(0) - batch_bad_num), largest=True)
-            # for i in range(index.size(0)):
-            #     if id_labels[index[i]].detach() == 0:
-            #         shutil.copy(file_name[index[i]], os.path.join(sample_good, os.path.split(file_name[index[i]])[-1]))
-            # # v, index = F.softmax(output, 1)[:, 1].topk(batch_filter_num, largest=False)
-            # v, index = output1[:, 1].topk(batch_bad_num, largest=False)
-            # for i in range(index.size(0)):
-            #     if id_labels[index[i]].detach() == 0:
-            #         shutil.copy(file_name[index[i]], os.path.join(sample_bad, os.path.split(file_name[index[i]])[-1]))
 
         datasize = dataset_sizes[phase]
         print('datasize = %d' % datasize)
