@@ -61,7 +61,7 @@ class filter_dataset(datasets.ImageFolder):
 
 
 data_dir = test_dir
-dataset_list = ['train_all']
+dataset_list = ['train_all_751']
 image_datasets = {x: filter_dataset(os.path.join(data_dir, x), data_transforms) for x in dataset_list}
 dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=opt.batchsize,
                                               shuffle=False, num_workers=16) for x in dataset_list}
@@ -115,6 +115,7 @@ def test(model, criterion):
                     shutil.copy(file_name[i], os.path.join(sample_good, os.path.split(file_name[i])[-1]))
                 if index1[i].detach() == 0 or index2[i].detach() == 0:
                     cnt_2 += 1
+            print(cnt_1, cnt_2)
 
             # v, index = F.softmax(output, 1)[:, 1].topk(batch_filter_num, largest=True)
             # v, index = output1[:, 1].topk((inputs1.size(0) - batch_bad_num), largest=True)
