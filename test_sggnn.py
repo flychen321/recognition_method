@@ -30,7 +30,7 @@ except ImportError:  # will be 3.x series
 parser = argparse.ArgumentParser(description='Training')
 parser.add_argument('--gpu_ids', default='0', type=str, help='gpu_ids: e.g. 0  0,1,2  0,2')
 parser.add_argument('--which_epoch', default='best_siamese', type=str, help='0,1,2,3...or last')
-parser.add_argument('--test_dir', default='data/market/pytorch', type=str, help='./test_data')
+parser.add_argument('--test_dir', default='market', type=str, help='./test_data')
 parser.add_argument('--name', default='sggnn', type=str, help='save model path')
 parser.add_argument('--batchsize', default=48, type=int, help='batchsize')
 parser.add_argument('--use_dense', action='store_true', help='use densenet121')
@@ -61,7 +61,8 @@ str_ids = opt.gpu_ids.split(',')
 # which_epoch = opt.which_epoch
 # name = opt.name
 name = 'sggnn'
-test_dir = opt.test_dir
+data_dir = os.path.join('data', opt.test_dir, 'pytorch')
+print('data_dir = %s' % data_dir)
 
 gpu_ids = []
 for str_id in str_ids:
@@ -94,7 +95,6 @@ if opt.PCB:
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ])
 
-data_dir = test_dir
 # dataset_list = ['gallery', 'query', 'train_all']
 dataset_list = ['gallery', 'query']
 image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x), data_transforms) for x in dataset_list}
@@ -186,7 +186,7 @@ for i in range(len(dataset_list)):
 ######################################################################
 # Load Collected data Trained model
 print('-------test-----------')
-class_num = len(os.listdir(os.path.join(opt.test_dir, 'train_all')))
+class_num = len(os.listdir(os.path.join(data_dir, 'train_all')))
 embedding_net = ft_net_dense(class_num)
 # embedding_net = ft_net_dense(2027)
 # embedding_net = ft_net_dense(702)

@@ -40,7 +40,7 @@ parser = argparse.ArgumentParser(description='Training')
 parser.add_argument('--gpu_ids', default='0', type=str, help='gpu_ids: e.g. 0  0,1,2  0,2')
 parser.add_argument('--name', default='ft_ResNet50', type=str, help='output model name')
 parser.add_argument('--save_model_name', default='', type=str, help='save_model_name')
-parser.add_argument('--data_dir', default='data/market/pytorch', type=str, help='training dir path')
+parser.add_argument('--data_dir', default='market', type=str, help='training dir path')
 parser.add_argument('--train_all', action='store_true', help='use all training data')
 parser.add_argument('--color_jitter', action='store_true', help='use color jitter in training')
 parser.add_argument('--batchsize', default=48, type=int, help='batchsize')
@@ -56,7 +56,9 @@ opt.use_dense = True
 print('opt = %s' % opt)
 print('net_loss_model = %d' % opt.net_loss_model)
 print('save_model_name = %s' % opt.save_model_name)
-data_dir = opt.data_dir
+data_dir = os.path.join('data', opt.data_dir, 'pytorch')
+print('data_dir = %s' % data_dir)
+
 # name = opt.name
 name = 'sggnn'
 str_ids = opt.gpu_ids.split(',')
@@ -154,6 +156,7 @@ dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=opt.
                for x in ['train', 'val']}
 
 dataset_sizes = {x: len(image_datasets[x]) for x in ['train', 'val']}
+print('dataset_sizes = %s' % dataset_sizes)
 
 use_gpu = torch.cuda.is_available()
 
@@ -302,8 +305,6 @@ def train_model_triplet(model, model_verif, criterion, optimizer, scheduler, num
             draw_curve(epoch)
             last_model_wts = model.state_dict()
 
-        print()
-
     time_elapsed = time.time() - since
     print('best_epoch = %s     best_loss = %s     best_acc = %s' % (best_epoch, best_loss, best_acc))
     print('Training complete in {:.0f}m {:.0f}s'.format(
@@ -412,18 +413,11 @@ def train_model_siamese(model, criterion, optimizer, scheduler, num_epochs=25):
                 loss_verif = loss_verif0
                 loss_space = mse_criterion(feature_sum_orig, feature_sum_new)
                 # 0.6 * loss_id + 0.4 * loss_verif is good
-                if opt.net_loss_model == 0:
-                    r1 = 0.55
-                    r2 = 0.45
-                    r3 = 0.00
-                elif opt.net_loss_model == 1:
-                    r1 = 0.55
-                    r2 = 0.45
-                    r3 = 0.1
-                elif opt.net_loss_model == 2:
-                    r1 = 0.55
-                    r2 = 0.45
-                    r3 = 0.1
+                # if opt.net_loss_model == 0:
+                #     r1 = 0.55
+                #     r2 = 0.45
+                r1 = 0.55
+                r2 = 0.45
                 loss = r1 * loss_id + r2 * loss_verif
 
                 # backward + optimize only if in training phase
@@ -602,17 +596,6 @@ def loss_bce(input, label, weight):
     return result
 
 
-# def loss_entropy_for_test(input, target, reduce=True):
-#     label = torch.zeros(input.shape).cuda()
-#     for i in range(input.size(0)):
-#         label[i][target[i]] = 1
-#     input = F.log_softmax(input, dim=1)
-#     result = -label * input
-#     result = torch.sum(result, 1)
-#     if reduce:
-#         result = torch.mean(result)
-#     return result
-
 def draw_curve(current_epoch):
     x_epoch.append(current_epoch)
     ax0.plot(x_epoch, y_loss['train'], 'bo-', label='train')
@@ -673,10 +656,10 @@ if stage_1:
         {'params': stage_1_verify_params, 'lr': 1 * opt.lr},
     ], weight_decay=5e-4, momentum=0.9, nesterov=True)
 
-    # exp_lr_scheduler = lr_scheduler.MultiStepLR(optimizer_ft, milestones=[40, 60], gamma=0.1)
-    exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=8, gamma=0.32)
-    model = train_model_siamese(model_siamese, criterion, optimizer_ft, exp_lr_scheduler,
-                                num_epochs=45)
+    # exp_lr_scheduler = lr_scheduler.MultiStepLR(optimizer_ft, milestones=[8, 13, 18, 22, 25], gamma=0.32)
+    exp_lr_scheduler = lr_scheduler.MultiStepLR(optimizer_ft, milestones=[10, 18, 26, 32, 38, 42], gamma=0.32)
+    # exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=8, gamma=0.32)
+    model = train_model_siamese(model_siamese, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=45)
 
 if stage_2:
     margin = 1.

@@ -9,11 +9,22 @@ import math
 import cv2
 import shutil
 import torch
+import argparse
+
 # image size: 128 * 64 *3
-path = 'data/filter_data/train_all_filter'
-id751_path = 'data/market/pytorch/train_all_original'
-dst_path = 'data/market/pytorch/train_all'
-# path = 'data/market/pytorch/part'
+parser = argparse.ArgumentParser(description='Augment')
+parser.add_argument('--data_dir', default='market', type=str, help='data_dir')
+parser.add_argument('--mode', default=0, type=int, help='mode')
+opt = parser.parse_args()
+print('opt = %s' % opt)
+data_dir = opt.data_dir
+print('data_dir = %s' % data_dir)
+print('opt.mode = %s' % opt.mode)
+path = os.path.join('data', data_dir, 'pytorch/train_all_original')
+id751_path = os.path.join('data', data_dir, 'pytorch/train_all_original')
+dst_path = os.path.join('data', data_dir, 'pytorch/train_all')
+print('path = %s    dst_path = %s' % (path, dst_path))
+
 def augment_once():
     dirs = os.listdir(path)
     dir_len = len(dirs)
@@ -71,7 +82,7 @@ def augment_more(max_id_num=1000):
             files1 = os.listdir(os.path.join(path, dirs1[i]))
             files2 = os.listdir(os.path.join(path, dirs2[i]))
             num = min(len(files1), len(files2))
-            if num < 6 or dir_name in name or dirs1[i] == dirs2[i]:
+            if num < 2 or dir_name in name or dirs1[i] == dirs2[i]:
                 continue
             index1 = np.random.permutation(len(files1))[:num]
             index2 = np.random.permutation(len(files2))[:num]
@@ -132,11 +143,32 @@ def merge_dir():
     print('total dir_num = %d   file_num = %d' % (dir_num, file_num))
 
 
-
 if __name__ == '__main__':
     if os.path.exists(dst_path):
         print('dst_path = %s is already existed !!!' % dst_path)
-        exit()
-    # augment_once()
-    augment_more(2300)
+        shutil.rmtree(dst_path)
+        # exit()
+    original_id_num = len(os.listdir(path))
+    if opt.mode == 0:
+        augment_id_num = 0
+    elif opt.mode == 1:
+        augment_id_num = 500
+    elif opt.mode == 2:
+        augment_id_num = 1000
+    elif opt.mode == 3:
+        augment_id_num = 1500
+    elif opt.mode == 4:
+        augment_id_num = 2000
+    elif opt.mode == 5:
+        augment_id_num = 2500
+    elif opt.mode == 6:
+        augment_id_num = 3000
+    elif opt.mode == 7:
+        augment_id_num = 3500
+    elif opt.mode == 8:
+        augment_id_num = 4000
+    else:
+        augment_id_num = 5000
+    print('opt.mode = %d   original_id_num = %d   augment_id_num = %d' % (opt.mode, original_id_num, augment_id_num))
+    augment_more(augment_id_num)
     merge_dir()

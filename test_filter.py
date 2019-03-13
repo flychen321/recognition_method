@@ -42,6 +42,7 @@ data_transforms = transforms.Compose([
     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
 
+
 class filter_dataset(datasets.ImageFolder):
     def __init__(self, root, transform):
         super(filter_dataset, self).__init__(root, transform)
@@ -54,8 +55,8 @@ class filter_dataset(datasets.ImageFolder):
         img = default_loader(img)
         if self.transform is not None:
             img = self.transform(img)
-        img_up = torch.cat((img[:, :int(img.size(1)/2)], img[:, :int(img.size(1)/2)]), 1)
-        img_down = torch.cat((img[:, int(img.size(1)/2):], img[:, int(img.size(1)/2):]), 1)
+        img_up = torch.cat((img[:, :int(img.size(1) / 2)], img[:, :int(img.size(1) / 2)]), 1)
+        img_down = torch.cat((img[:, int(img.size(1) / 2):], img[:, int(img.size(1) / 2):]), 1)
         return img_up, img_down, int(label), file_name
         # return img, img, int(label), file_name
 
@@ -70,16 +71,23 @@ use_gpu = torch.cuda.is_available()
 
 sample_good = 'data/filter_data/good'
 sample_bad = 'data/filter_data/bad'
+sample_bad2 = 'data/filter_data/bad2'
 if os.path.exists(sample_good):
     shutil.rmtree(sample_good)
 if os.path.exists(sample_bad):
     shutil.rmtree(sample_bad)
+if os.path.exists(sample_bad2):
+    shutil.rmtree(sample_bad2)
 os.makedirs(sample_good)
 os.makedirs(sample_bad)
+os.makedirs(sample_bad2)
+
+
 def test(model, criterion):
     model.eval()
     running_loss = 0
     running_corrects = 0
+    cnt_0 = 0
     cnt_1 = 0
     cnt_2 = 0
     for phase in dataset_list:
@@ -91,7 +99,7 @@ def test(model, criterion):
             # forward
             with torch.no_grad():
                 output1, output2, \
-                result, result, result, result, result, result, result, result\
+                result, result, result, result, result, result, result, result \
                     = model(inputs1, inputs2)
                 _, id_preds1 = torch.max(output1.detach(), 1)
                 _, id_preds2 = torch.max(output2.detach(), 1)
@@ -103,8 +111,7 @@ def test(model, criterion):
             running_loss += loss2.item()  # * opt.batchsize
             running_corrects += float(torch.sum(id_preds1 == id_labels.detach()))
             running_corrects += float(torch.sum(id_preds2 == id_labels.detach()))
-            ratio = 0.005
-            batch_bad_num = int(ratio * inputs1.size(0))
+
             # largest=True mean select similar to real, otherwise fake
             p1 = [F.softmax(output1, 1)[i, id_labels[i]] for i in range(output1.size(0))]
             p1, index1 = torch.sort(torch.Tensor(p1), descending=False)
@@ -113,12 +120,23 @@ def test(model, criterion):
             output = output1 + output2
             p = [F.softmax(output, 1)[i, id_labels[i]] for i in range(output.size(0))]
             p, index = torch.sort(torch.Tensor(p), descending=False)
-
+            ratio1 = 0.00
+            ratio2 = 0.01
+            ratio3 = 0.04
+            batch_bad_num1 = int(ratio1 * inputs1.size(0))
+            batch_bad_num2 = int(ratio2 * inputs1.size(0))
+            batch_bad_num3 = int(ratio3 * inputs1.size(0))
             for i in range(len(index1)):
-                if i < batch_bad_num:
+                if i < batch_bad_num1:
+                    shutil.copy(file_name[index[i]], os.path.join(sample_bad, os.path.split(file_name[index[i]])[-1]))
+                    cnt_0 += 1
+                elif i >= batch_bad_num2 and i < batch_bad_num3:
                     # shutil.copy(file_name[index1[i]], os.path.join(sample_bad, os.path.split(file_name[index1[i]])[-1]))
                     # shutil.copy(file_name[index2[i]], os.path.join(sample_bad, os.path.split(file_name[index2[i]])[-1]))
-                    shutil.copy(file_name[index[i]], os.path.join(sample_bad, os.path.split(file_name[index[i]])[-1]))
+                    shutil.copy(file_name[index[i]], os.path.join(sample_bad2, os.path.split(file_name[index[i]])[-1]))
+                    shutil.copy(file_name[index[i]], os.path.join(sample_good, os.path.split(file_name[index[i]])[-1]))
+                    shutil.copy(file_name[index[i]],
+                                os.path.join(sample_good, os.path.split(file_name[index[i]])[-1][:-4] + '_1.jpg'))
                     cnt_1 += 1
                 # elif i >= len(index1) - batch_bad_num:
                 else:
@@ -137,8 +155,7 @@ def test(model, criterion):
             #         shutil.copy(file_name[i], os.path.join(sample_good, os.path.split(file_name[i])[-1]))
             #     if index1[i].detach() == 0 or index2[i].detach() == 0:
             #         cnt_2 += 1
-            print(cnt_1, cnt_2)
-
+            print(cnt_0, cnt_1, cnt_2)
 
         datasize = dataset_sizes[phase]
         print('datasize = %d' % datasize)
@@ -169,10 +186,10 @@ def pack_to_dir():
         file_num += 1
     print('dir_num = %d   file_num = %d' % (dir_num, file_num))
 
+
 ######################################################################
 # Load Collected data Trained model
 print('-------test-----------')
-class_num = len(os.listdir(os.path.join(opt.test_dir, 'train_all')))
 embedding_net = ft_net_dense(751)
 model_siamese = SiameseNet(embedding_net)
 model_siamese = load_network_easy(model_siamese, name, opt.which_epoch)
