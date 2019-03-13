@@ -82,7 +82,7 @@ def augment_more(max_id_num=1000):
             files1 = os.listdir(os.path.join(path, dirs1[i]))
             files2 = os.listdir(os.path.join(path, dirs2[i]))
             num = min(len(files1), len(files2))
-            if num < 2 or dir_name in name or dirs1[i] == dirs2[i]:
+            if num < 6 or dir_name in name or dirs1[i] == dirs2[i]:
                 continue
             index1 = np.random.permutation(len(files1))[:num]
             index2 = np.random.permutation(len(files2))[:num]
