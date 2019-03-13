@@ -4,7 +4,7 @@ import numpy as np
 if not os.path.exists('log'):
     os.mkdir('log')
 dataset = 'duke'
-for i in range(10):
+for i in np.arange(1, 10):
     print('i = %.3f' % i)
     log_name = 'log/' + 'log_' + str(i)
     print('log name = %s' % log_name)

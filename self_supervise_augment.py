@@ -13,8 +13,8 @@ import argparse
 
 # image size: 128 * 64 *3
 parser = argparse.ArgumentParser(description='Augment')
-parser.add_argument('--data_dir', default='market', type=str, help='data_dir')
-parser.add_argument('--mode', default=0, type=int, help='mode')
+parser.add_argument('--data_dir', default='duke', type=str, help='data_dir')
+parser.add_argument('--mode', default=1, type=int, help='mode')
 opt = parser.parse_args()
 print('opt = %s' % opt)
 data_dir = opt.data_dir
@@ -97,6 +97,8 @@ def augment_more(max_id_num=1000):
                 for j in range(num):
                     img1 = cv2.imread(os.path.join(path, dirs1[i], files1[index1[j]]))
                     img2 = cv2.imread(os.path.join(path, dirs2[i], files2[index2[j]]))
+                    img1 = cv2.resize(img1, (128, 256), interpolation=cv2.INTER_CUBIC)
+                    img2 = cv2.resize(img2, (128, 256), interpolation=cv2.INTER_CUBIC)
                     img_new1 = np.concatenate(
                         (img1[:int(img1.shape[0] / 2), :, ], img2[int(img2.shape[0] / 2):, :, :]), 0)
                     img_new2 = np.concatenate(
