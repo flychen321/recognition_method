@@ -11,7 +11,8 @@ import matplotlib.pyplot as plt
 #######################################################################
 # Evaluate
 
-cam_metric = torch.zeros(6, 6)
+# cam_metric = torch.zeros(6, 6)
+cam_metric = torch.zeros(8, 8)
 
 
 def evaluate(qf, ql, qc, gf, gl, gc):
