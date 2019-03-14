@@ -4,12 +4,15 @@
 *.mat
 *log.*
 *.html
+*run*
+*self*
 *.pyc
 *.jpeg
 *.pth
 *checkpoint*
 *data/*
 *.xml
+*.iml
 *.pkl
 *log/*
 *opts.json
