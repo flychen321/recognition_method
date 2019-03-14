@@ -169,6 +169,8 @@ if __name__ == '__main__':
         augment_id_num = 3500
     elif opt.mode == 8:
         augment_id_num = 4000
+    elif opt.mode == 9:
+        augment_id_num = 4500
     else:
         augment_id_num = 5000
     print('opt.mode = %d   original_id_num = %d   augment_id_num = %d' % (opt.mode, original_id_num, augment_id_num))

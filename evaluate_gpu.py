@@ -4,15 +4,29 @@ import numpy as np
 import time
 import os
 import matplotlib
-
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
+import argparse
 
 #######################################################################
 # Evaluate
 
-# cam_metric = torch.zeros(6, 6)
-cam_metric = torch.zeros(8, 8)
+# image size: 128 * 64 *3
+parser = argparse.ArgumentParser(description='Evaluate')
+parser.add_argument('--data_dir', default='duke', type=str, help='data_dir')
+parser.add_argument('--mode', default=1, type=int, help='mode')
+opt = parser.parse_args()
+print('opt = %s' % opt)
+data_dir = opt.data_dir
+print('data_dir = %s' % data_dir)
+print('opt.mode = %s' % opt.mode)
+
+if 'market' in data_dir:
+    cam_metric = torch.zeros(6, 6)
+elif 'duke' in data_dir:
+    cam_metric = torch.zeros(8, 8)
+else:
+    cam_metric = torch.zeros(6, 6)
 
 
 def evaluate(qf, ql, qc, gf, gl, gc):
