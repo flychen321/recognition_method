@@ -21,10 +21,10 @@ for j in np.arange(3):
 
         os.system(
             'python test_sggnn.py  --test_dir ' + dataset + ' --use_dense --gpu_ids 0 --name sggnn --which_epoch best_siamese ' + ' >>  ' + log_name)
-        os.system('python evaluate_gpu.py' + ' >> ' + log_name)
+        os.system('python evaluate_gpu.py --data_dir ' + dataset + ' >> ' + log_name)
         os.system('python evaluate_rerank.py' + ' >> ' + log_name)
 
         os.system(
             'python test_sggnn.py  --test_dir ' + dataset + ' --use_dense --gpu_ids 0 --name sggnn --which_epoch last_siamese ' + ' >>  ' + log_name)
-        os.system('python evaluate_gpu.py' + ' >> ' + log_name)
+        os.system('python evaluate_gpu.py --data_dir ' + dataset + ' >> ' + log_name)
         os.system('python evaluate_rerank.py' + ' >> ' + log_name)
