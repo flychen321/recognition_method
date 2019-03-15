@@ -673,6 +673,8 @@ if stage_1:
     print('epoc = %3d   step = %3d' % (epoc, step))
     exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=step, gamma=0.1)
     model = train_model_siamese(model_siamese, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=epoc)
+    # exp_lr_scheduler = lr_scheduler.MultiStepLR(optimizer_ft, milestones=[10, 18, 26, 32, 38, 42], gamma=0.32)
+    # exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=8, gamma=0.32)
 
 if stage_2:
     margin = 1.
