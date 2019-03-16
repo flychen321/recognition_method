@@ -17,3 +17,4 @@
 *log/*
 *opts.json
 *.yaml
+*model/*

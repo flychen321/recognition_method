@@ -32,7 +32,7 @@ from model_siamese import load_network_easy, load_network, save_network, save_wh
 from model_gcn import Sggnn_prepare, GCN
 
 version = torch.__version__
-
+print(version)
 ######################################################################
 # Options
 # --------
@@ -656,10 +656,25 @@ if stage_1:
         {'params': stage_1_verify_params, 'lr': 1 * opt.lr},
     ], weight_decay=5e-4, momentum=0.9, nesterov=True)
 
-    # exp_lr_scheduler = lr_scheduler.MultiStepLR(optimizer_ft, milestones=[8, 13, 18, 22, 25], gamma=0.32)
-    exp_lr_scheduler = lr_scheduler.MultiStepLR(optimizer_ft, milestones=[10, 18, 26, 32, 38, 42], gamma=0.32)
+    if opt.net_loss_model == 0:
+        epoc = 100
+        step = 30
+    elif opt.net_loss_model == 1:
+        epoc = 80
+        step = 24
+    elif opt.net_loss_model == 2:
+        epoc = 60
+        step = 18
+    else:
+        epoc = 45
+        step = 13
+    # exp_lr_scheduler = lr_scheduler.MultiStepLR(optimizer_ft, milestones=[10, 15, 20, 24, 27], gamma=0.32)
+    # exp_lr_scheduler = lr_scheduler.MultiStepLR(optimizer_ft, milestones=[10, 18, 26, 32, 38, 42], gamma=0.32)
+    print('epoc = %3d   step = %3d' % (epoc, step))
+    exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=step, gamma=0.1)
+    model = train_model_siamese(model_siamese, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=epoc)
+    # exp_lr_scheduler = lr_scheduler.MultiStepLR(optimizer_ft, milestones=[10, 18, 26, 32, 38, 42], gamma=0.32)
     # exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=8, gamma=0.32)
-    model = train_model_siamese(model_siamese, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=45)
 
 if stage_2:
     margin = 1.
