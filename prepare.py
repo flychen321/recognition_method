@@ -2,7 +2,7 @@ import os
 from shutil import copyfile
 
 # You only need to change this line to your dataset download path
-download_path = 'data/market'
+download_path = 'data/cuhk_detected'
 
 if not os.path.isdir(download_path):
     print('please change the download_path')
@@ -10,6 +10,8 @@ if not os.path.isdir(download_path):
 save_path = download_path + '/pytorch'
 if not os.path.isdir(save_path):
     os.mkdir(save_path)
+
+suffix = 'jpg'
 #-----------------------------------------
 #query
 query_path = download_path + '/query'
@@ -19,7 +21,7 @@ if not os.path.isdir(query_save_path):
 
 for root, dirs, files in os.walk(query_path, topdown=True):
     for name in files:
-        if not name[-3:]=='jpg':
+        if not name[-3:]==suffix:
             continue
         ID  = name.split('_')
         src_path = query_path + '/' + name
@@ -37,7 +39,7 @@ if not os.path.isdir(query_save_path):
 
 for root, dirs, files in os.walk(query_path, topdown=True):
     for name in files:
-        if not name[-3:]=='jpg':
+        if not name[-3:]==suffix:
             continue
         ID  = name.split('_')
         src_path = query_path + '/' + name
@@ -55,7 +57,7 @@ if not os.path.isdir(gallery_save_path):
 
 for root, dirs, files in os.walk(gallery_path, topdown=True):
     for name in files:
-        if not name[-3:]=='jpg':
+        if not name[-3:]==suffix:
             continue
         ID  = name.split('_')
         src_path = gallery_path + '/' + name
@@ -73,7 +75,7 @@ if not os.path.isdir(train_save_path):
 
 for root, dirs, files in os.walk(train_path, topdown=True):
     for name in files:
-        if not name[-3:]=='jpg':
+        if not name[-3:]==suffix:
             continue
         ID  = name.split('_')
         src_path = train_path + '/' + name
@@ -94,7 +96,7 @@ if not os.path.isdir(train_save_path):
 
 for root, dirs, files in os.walk(train_path, topdown=True):
     for name in files:
-        if not name[-3:]=='jpg':
+        if not name[-3:]==suffix:
             continue
         ID  = name.split('_')
         src_path = train_path + '/' + name
